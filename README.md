@@ -8,7 +8,7 @@ Knowledge distillation is used in an attempt to transfer the invariances exhibit
 
 clone the repo
 ```bash
-   git clone https://github.com/Nicole-Nobili/distillinginvariances.git
+   git clone https://github.com/bb511/distillinginvariances.git
 ```
 
 The repository consists of independent experiments conducted over three datasets organized into three folders: jetid_experiments, mnist_experiments and modelnet_experiments. Instructions on how to run each indivual experiment are provided in the README within the respective folder.
