@@ -1,0 +1,32 @@
+---
+define: &temperature 16
+
+outdir: 'mlp_to_mlp_T16_16const_perm'
+data_hyperparams:
+  root: '../data/jetid'
+  nconst: 16
+  feats: "ptetaphi"
+  norm: "robust"
+  torch_dataloader:
+    batch_size: 256
+    shuffle: True
+    num_workers: 8
+
+teacher: "trained_models/mlp_16const_perm/"
+teacher_seed: 42
+
+model_type: "mlp_basic"
+
+model_hyperparams:
+  input_dim: 48 # flattened 16 const * 3 features
+  layers: [88, 88, 44, 44, 44]
+  activ: "relu"
+  output_dim: 5
+
+distill_hyperparams:
+  lr: 0.0015
+  lr_patience: 15
+  epochs: 1000
+  early_stopping: 30
+  alpha: 0
+  temp: *temperature

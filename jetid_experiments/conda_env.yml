@@ -1,0 +1,19 @@
+name: distinv_jetid
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - pytorch
+  - pytorch-cuda=12.1
+  - torchaudio
+  - torchvision
+  - torchinfo
+  - matplotlib
+  - wget
+  - python-wget
+  - h5py
+  - scikit-learn
+  - torchmetrics
+prefix: /data/deodagiu/miniconda/envs/distinv_jetid

@@ -1,0 +1,29 @@
+---
+outdir: 'mlp_16const_perm'
+data_hyperparams:
+  root: '../data/jetid'
+  nconst: 16
+  feats: "ptetaphi"
+  norm: "robust"
+  torch_dataloader:
+    batch_size: 256
+    shuffle: True
+    num_workers: 8
+
+model_type: "mlp_basic"
+
+model_hyperparams:
+  input_dim: 48 # flattened 16 const * 3 features
+  layers: [88, 88, 44, 44, 44]
+  activ: "relu"
+  output_dim: 5
+
+training_hyperparams:
+  lr: 0.0015
+  lr_patience: 15
+  epochs: 1000
+  weight_decay: 0.0000001
+  loss: "ce"
+  # clip_grad: 5
+  early_stopping: 30
+  permute: True

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+nohup python -u distill.py --config configs/config_dgcnnalt_to_deepsequiv_1000p.yml --seed 42 --device cuda:0 > ./logs/dgcnnalt_to_deepsequiv_T16_1000p_s42 &
+nohup python -u distill.py --config configs/config_dgcnnalt_to_deepsequiv_1000p.yml --seed 121 --device cuda:1 > ./logs/dgcnnalt_to_deepsequiv_T16_1000p_s121 &
+nohup python -u distill.py --config configs/config_dgcnnalt_to_deepsequiv_1000p.yml --seed 308 --device cuda:2 > ./logs/dgcnnalt_to_deepsequiv_T16_1000p_s308 &
+nohup python -u distill.py --config configs/config_dgcnnalt_to_deepsequiv_1000p.yml --seed 240 --device cuda:3 > ./logs/dgcnnalt_to_deepsequiv_T16_1000p_s240 &

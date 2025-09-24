@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+nohup python -u hyperparam_optim.py --config configs/config_optuna_mlp_1000p.yml --device cuda:0 > ./logs_optuna/mlp_1000p_1 &
+nohup python -u hyperparam_optim.py --config configs/config_optuna_mlp_1000p.yml --device cuda:0 > ./logs_optuna/mlp_1000p_2 &
+nohup python -u hyperparam_optim.py --config configs/config_optuna_mlp_1000p.yml --device cuda:0 > ./logs_optuna/mlp_1000p_3 &
+nohup python -u hyperparam_optim.py --config configs/config_optuna_mlp_1000p.yml --device cuda:0 > ./logs_optuna/mlp_1000p_4 &
+nohup python -u hyperparam_optim.py --config configs/config_optuna_mlp_1000p.yml --device cuda:0 > ./logs_optuna/mlp_1000p_5 &

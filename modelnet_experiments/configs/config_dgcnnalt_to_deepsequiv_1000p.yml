@@ -1,0 +1,41 @@
+---
+define: &sampling 1000
+define: &classes 40
+define: &temp 16
+
+outdir: 'dgcnnalt_to_deepsequiv_T16_1000p'
+data_hyperparams:
+  pc_rootdir: '../data/ModelNet40_1000p'
+  classes: *classes
+  pretransforms:
+    norm: True
+    sampling: *sampling
+  transforms: null
+  torch_dataloader:
+    batch_size: 128
+    shuffle: True
+    num_workers: 8
+
+teacher: "trained_models/dgcnn_1000p_alt_tinv/"
+target_teacher: "trained_models/dgcnn_1000p_wang_tinv"
+teacher_seed: 42
+
+model_type: "ds_equivariant"
+
+model_hyperparams:
+  input_dim: 3
+  phi_layers: [256, 256, 256]
+  rho_layers: [256]
+  activ: "tanh"
+  aggreg: "max"
+  dropout: 0.5
+  output_dim: *classes
+
+
+distill_hyperparams:
+  lr: 0.001
+  lr_patience: 15
+  epochs: 1000
+  early_stopping: 30
+  alpha: 0
+  temp: *temp

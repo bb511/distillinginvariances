@@ -1,0 +1,37 @@
+---
+define: &sampling 1000
+define: &classes 40
+
+outdir: 'dgcnn_1000p_alt_tinv'
+data_hyperparams:
+  pc_rootdir: '../data/ModelNet40_1000p'
+  classes: *classes
+  pretransforms:
+    norm: True
+    sampling: *sampling
+  transforms: null
+  torch_dataloader:
+    batch_size: 32
+    shuffle: True
+    num_workers: 8
+
+model_type: "dgcnn_alt"
+
+model_hyperparams:
+  input_dim: 3
+  linear_dim: 512
+  output_mlp: [512, 256]
+  aggr: "max"
+  activ: "leaky_relu"
+  k: 20
+  output_dim: *classes
+
+training_hyperparams:
+  lr: 0.001
+  lr_patience: 15
+  epochs: 1000
+  weight_decay: 0.0000001
+  loss: "ce"
+  # clip_grad: 5
+  early_stopping: 30
+  translate: False

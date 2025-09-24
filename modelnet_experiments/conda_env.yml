@@ -1,0 +1,25 @@
+name: distinv
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pyyaml
+  - numpy
+  - pytorch
+  - pytorch-cuda=12.1
+  - torchaudio
+  - torchvision
+  - torchinfo
+  - scipy
+  - plotly
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - pyg
+  - tabulate
+  - torchmetrics
+  - optuna
+  - pytorch-cluster
+  - pytorch-scatter
+prefix: /data/deodagiu/miniconda/envs/distinv

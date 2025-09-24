@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+nohup python -u train.py --config configs/config_paper_dgcnn_100p.yml --seed 42 --device cuda:0 > ./logs/dgcnn_100p_wang_s42 &
+nohup python -u train.py --config configs/config_paper_dgcnn_100p.yml --seed 121 --device cuda:1 > ./logs/dgcnn_100p_wang_s121 &
+nohup python -u train.py --config configs/config_paper_dgcnn_100p.yml --seed 308 --device cuda:2 > ./logs/dgcnn_100p_wang_s308 &
+nohup python -u train.py --config configs/config_paper_dgcnn_100p.yml --seed 240 --device cuda:3 > ./logs/dgcnn_100p_wang_s240 &

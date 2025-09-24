@@ -1,0 +1,38 @@
+---
+# Configuration to reproduce the results from https://arxiv.org/abs/1703.06114 app H.
+define: &sampling 100
+define: &classes 40
+
+outdir: 'deepsequiv_100p_zaheer_trans'
+data_hyperparams:
+  pc_rootdir: '../data/ModelNet40_100p'
+  classes: *classes
+  pretransforms:
+    norm: True
+    sampling: *sampling
+  transforms: null
+  torch_dataloader:
+    batch_size: 64
+    shuffle: True
+    num_workers: 4
+
+model_type: "ds_equivariant"
+
+model_hyperparams:
+  input_dim: 3
+  phi_layers: [256, 256, 256]
+  rho_layers: [256]
+  activ: "tanh"
+  aggreg: "max"
+  dropout: 0.5
+  output_dim: *classes
+
+training_hyperparams:
+  lr: 0.001
+  lr_patience: 15
+  epochs: 1000
+  weight_decay: 0.0000001
+  loss: "ce"
+  clip_grad: 5
+  early_stopping: 30
+  translate: True

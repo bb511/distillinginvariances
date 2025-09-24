@@ -1,0 +1,31 @@
+data_hyperparams:
+  feats: ptetaphi
+  nconst: 16
+  norm: robust
+  root: ../data/jetid
+  torch_dataloader:
+    batch_size: 256
+    num_workers: 8
+    shuffle: true
+define: 1
+distill_hyperparams:
+  alpha: 0
+  early_stopping: 30
+  epochs: 1000
+  lr: 0.0015
+  lr_patience: 15
+  temp: 1
+model_hyperparams:
+  activ: relu
+  input_dim: 48
+  layers:
+  - 88
+  - 88
+  - 44
+  - 44
+  - 44
+  output_dim: 5
+model_type: mlp_basic
+outdir: mlp_to_mlp_T1_16const
+teacher: trained_models/mlp_16const/
+teacher_seed: 42

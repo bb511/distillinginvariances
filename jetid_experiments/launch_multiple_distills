@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+nohup python -u distill.py --config configs/config_mlp_to_mlp_16const_perm.yml --seed 42 --device cuda:0 > ./logs/mlp_to_mlp_T16_16const_perm_s42 &
+nohup python -u distill.py --config configs/config_mlp_to_mlp_16const_perm.yml --seed 121 --device cuda:1 > ./logs/mlp_to_mlp_T16_16const_perm_s121 &
+nohup python -u distill.py --config configs/config_mlp_to_mlp_16const_perm.yml --seed 308 --device cuda:2 > ./logs/mlp_to_mlp_T16_16const_perm_s308 &
+nohup python -u distill.py --config configs/config_mlp_to_mlp_16const_perm.yml --seed 240 --device cuda:3 > ./logs/mlp_to_mlp_T16_16const_perm_s240 &
