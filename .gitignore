@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/
@@ -205,3 +205,35 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+.sublime/
+sftp-config.json
+*.swp
+*.swo
+*~
+
+# Experiment inputs and outputs (see run.py SETTINGS)
+/data/
+/outputs/
+/src/data/
+/logs/
+/results/
+*.out
+
+# Datasets and checkpoints
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.pt
+*.ckpt
+*.root
+*.tar
+*.tar.gz

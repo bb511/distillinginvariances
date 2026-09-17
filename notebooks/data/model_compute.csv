@@ -1,0 +1,5 @@
+# Transcribed from the annotations printed on the previous matplotlib figures (gfx/sweep_*_grid*.png, gfx/temperature_*.png); not exported from a training run.
+experiment,unit,teacher,student
+deepsets_jets,eBOPs (8-bit),4.47e6,6.66e5
+lorentznet_jets,eBOPs (8-bit),1.77e11,6.66e5
+cnn_mnist,FLOPs,8.72e7,4.44e5

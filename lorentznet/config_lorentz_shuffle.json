@@ -1,0 +1,96 @@
+{
+  "seed": 325,
+  "fold": 0,
+  "n_folds": 5,
+  "fold_seed": 0,
+  "dataset": {
+    "seed": 20260820,
+    "chunk_size": 4096
+  },
+  "evaluation": {
+    "batch_size": 256,
+    "ece_bins": 15,
+    "lorentz_transforms": 16,
+    "seed": 20260821,
+    "precision": "float32_no_tf32"
+  },
+  "teacher": {
+    "search_train_samples": 200000,
+    "search_val_samples": 50000,
+    "search_epochs": 25,
+    "search_patience": 10,
+    "final_epochs": 200,
+    "final_patience": 30,
+    "bn_calibration_samples": 8192,
+    "trials": [
+      {"name": "reference", "hidden_dim": 96, "layers": 4, "lr": 0.0005, "c_weight": 0.001, "batch_size": 128, "dropout": 0.2, "weight_decay": 0.01, "label_smoothing": 0.0, "warmup_epochs": 10},
+      {"name": "lr4e4", "hidden_dim": 96, "layers": 4, "lr": 0.0004, "c_weight": 0.001, "batch_size": 128, "dropout": 0.2, "weight_decay": 0.01, "label_smoothing": 0.0, "warmup_epochs": 10},
+      {"name": "lr6e4", "hidden_dim": 96, "layers": 4, "lr": 0.0006, "c_weight": 0.001, "batch_size": 128, "dropout": 0.2, "weight_decay": 0.01, "label_smoothing": 0.0, "warmup_epochs": 10},
+      {"name": "dropout15", "hidden_dim": 96, "layers": 4, "lr": 0.0005, "c_weight": 0.001, "batch_size": 128, "dropout": 0.15, "weight_decay": 0.01, "label_smoothing": 0.0, "warmup_epochs": 10},
+      {"name": "dropout25", "hidden_dim": 96, "layers": 4, "lr": 0.0005, "c_weight": 0.001, "batch_size": 128, "dropout": 0.25, "weight_decay": 0.01, "label_smoothing": 0.0, "warmup_epochs": 10},
+      {"name": "wd6e3", "hidden_dim": 96, "layers": 4, "lr": 0.0005, "c_weight": 0.001, "batch_size": 128, "dropout": 0.2, "weight_decay": 0.006, "label_smoothing": 0.0, "warmup_epochs": 10},
+      {"name": "wd15e3", "hidden_dim": 96, "layers": 4, "lr": 0.0005, "c_weight": 0.001, "batch_size": 128, "dropout": 0.2, "weight_decay": 0.015, "label_smoothing": 0.0, "warmup_epochs": 10},
+      {"name": "smooth03", "hidden_dim": 96, "layers": 4, "lr": 0.0005, "c_weight": 0.001, "batch_size": 128, "dropout": 0.2, "weight_decay": 0.01, "label_smoothing": 0.03, "warmup_epochs": 10}
+    ]
+  },
+  "student": {
+    "hidden": [64, 32, 32, 32],
+    "guided_hidden_index": 3,
+    "baseline": {
+      "max_epochs": 200,
+      "lr": 0.01,
+      "weight_decay": 0.0,
+      "batch_size": 1024,
+      "lr_factor": 0.1,
+      "lr_patience": 30,
+      "lr_scheduler_mode": "min",
+      "lr_scheduler_monitor": "val_nll",
+      "patience": 30
+    },
+    "kd": {
+      "max_epochs": 200,
+      "lr": 0.001,
+      "weight_decay": 0.0,
+      "batch_size": 512,
+      "lr_factor": 0.1,
+      "lr_patience": 30,
+      "lr_scheduler_mode": "min",
+      "lr_scheduler_monitor": "val_nll",
+      "patience": 30
+    },
+    "hint": {
+      "max_epochs": 200,
+      "lr": 0.001,
+      "weight_decay": 0.0,
+      "batch_size": 512,
+      "lr_factor": 0.1,
+      "lr_patience": 30,
+      "lr_scheduler_mode": "min",
+      "lr_scheduler_monitor": "val_hint_mse",
+      "patience": 30
+    },
+    "vrm": {
+      "max_epochs": 300,
+      "weight_decay": 0.0,
+      "batch_size": 256,
+      "warmup_fraction": 0.05,
+      "patience": 60,
+      "max_pairs": 256
+    }
+  },
+  "distillation": {
+    "temperatures": [1.0, 2.0, 4.0, 8.0, 16.0],
+    "ce_weights": [0.1, 0.25, 0.5, 1.0],
+    "beta_values": [0.05, 0.1, 0.25, 0.5, 0.75],
+    "relation_criteria": ["mse", "cosine", "smooth_l1", "distance_mse"],
+    "vrm_no_ce_lambda_ic_ratios": [0.0, 0.125, 0.25, 0.5, 1.0, 2.0],
+    "vrm_with_ce_lambda_is": [1.0, 8.0, 32.0, 128.0],
+    "vrm_with_ce_lambda_ic": [1.0, 8.0, 32.0],
+    "vrm_learning_rates": [0.0003, 0.001, 0.003, 0.008],
+    "search_train_samples": 100000,
+    "search_val_samples": 25000,
+    "search_epochs": 60,
+    "search_patience": 15
+  },
+  "teacher_cache_batch_size": 128
+}

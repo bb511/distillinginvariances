@@ -1,0 +1,59 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[CellGroupData[{
+Cell["Distilling Knowledge of Symmetries: Paper Figures", "Title"],
+
+Cell["\<\
+Rebuilds every figure of the paper from the CSV exports in data/. Style helpers (tol_vibrant, TeX Gyre Heros, framed panels) live in lib/distill_style.wl and are copied from adl1t_datamaker/notebooks/nature_descriptor_plots.nb; the panel builders and figure definitions live in lib/distill_figures.wl. Exports (PDF and SVG) go to plots/ and are copied by hand into the paper's gfx/ folder. The same build runs headless with `wolframscript -file build_figures.wls`.\
+\>", "Text"],
+
+Cell["\<\
+dataDir = FileNameJoin[{NotebookDirectory[], \"data\"}];
+plotsDir = FileNameJoin[{NotebookDirectory[], \"plots\"}];
+If[!DirectoryQ[plotsDir], CreateDirectory[plotsDir]];
+Get[FileNameJoin[{NotebookDirectory[], \"lib\", \"distill_style.wl\"}]];
+Get[FileNameJoin[{NotebookDirectory[], \"lib\", \"distill_figures.wl\"}]];\
+\>", "Input"],
+
+Cell[CellGroupData[{
+Cell["Canonical data (Fig. noshuffle)", "Section"],
+Cell["\<\
+canonical = canonicalFigures /@ canonicalSpecs;
+preview[Values[canonical[[1]]], 4]\
+\>", "Input"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["Temperature sweeps (Figs. tscan_noce, tscan_ce)", "Section"],
+Cell["\<\
+sweeps = sweepFigure /@ sweepSpecs;
+Magnify[sweeps[[1]], 0.45]\
+\>", "Input"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["NLL and ECE across methods (Fig. nll_ece_methods)", "Section"],
+Cell["\<\
+nllEce = nllEceFigures[];
+preview[nllEce, 4]\
+\>", "Input"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["Relational discrepancy functions (Fig. LorentzNLL)", "Section"],
+Cell["\<\
+relational = relationalFigure[];
+Magnify[relational, 0.6]\
+\>", "Input"]
+}, Open]]
+}, Open]]
+},
+WindowSize->{1200, 900},
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)

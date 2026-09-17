@@ -1,0 +1,15 @@
+# --- mnist_nll_ece_methods_a0 (without CE) ---
+regime,method,nll_mean,nll_std,ece_mean,ece_std
+a0_without_CE,Teacher,0.0372,0.0052,0.0035,0.0007
+a0_without_CE,MLP_baseline,0.7049,0.0329,0.0851,0.0041
+a0_without_CE,KD,0.6466,0.0628,0.0814,0.0039
+a0_without_CE,Hint,0.7507,0.0454,0.0941,0.0031
+a0_without_CE,Hint_beta025,0.8013,0.0638,0.1040,0.0053
+a0_without_CE,Relational_Distillation,147.5391,54.6289,0.0936,0.0044
+# --- mnist_nll_ece_methods_a2 (with CE, alpha=2) ---
+a2_with_CE,Teacher,0.0372,0.0052,0.0035,0.0007
+a2_with_CE,MLP_baseline,0.7049,0.0329,0.0851,0.0041
+a2_with_CE,KD,0.6065,0.0401,0.0756,0.0028
+a2_with_CE,Hint,0.7141,0.0234,0.0896,0.0021
+a2_with_CE,Hint_beta025,0.7878,0.0412,0.1013,0.0049
+a2_with_CE,Relational_Distillation,43.4729,5.4066,0.0795,0.0033
