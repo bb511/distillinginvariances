@@ -1,0 +1,21 @@
+# @package _global_
+
+# Knowledge distillation from the cached logits: T^2 KL(teacher || student) + alpha CE.
+defaults:
+  - override /algorithm: distillation
+
+stage: kd
+hp_tag: T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}
+
+monitor: val/acc
+monitor_mode: max
+patience: 30
+
+trainer:
+  max_epochs: 200
+
+data:
+  teacher_cache: ${teacher_cache}
+
+algorithm:
+  objective: kd

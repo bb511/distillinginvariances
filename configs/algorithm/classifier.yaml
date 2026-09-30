@@ -1,0 +1,33 @@
+# Cross entropy on the one-hot labels: the teachers and the baseline students.
+_target_: src.algorithms.classifier.Classifier
+
+# The module instantiates net, optimizer and scheduler itself from the plain dicts it keeps in
+# its hparams, which is what lets load_from_checkpoint rebuild a teacher with no Hydra config at
+# hand; hence no recursive instantiation here.
+_recursive_: false
+_convert_: all
+
+# method/baseline.yaml rewrites this to ${student_net}.
+net: ${teacher_net}
+num_classes: ${num_classes}
+input_shape: ${input_shape}
+
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: true
+  lr: 1.0e-3
+  weight_decay: 0.0
+
+scheduler:
+  scheduler:
+    _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+    _partial_: true
+    # Follows the monitored metric, which the method config sets alongside its direction.
+    mode: ${monitor_mode}
+    patience: 20
+    factor: 0.1
+  monitor: ${monitor}
+  interval: epoch
+  frequency: 1
+
+compile: false

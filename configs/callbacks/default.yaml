@@ -1,0 +1,27 @@
+# @package callbacks
+
+# Everything a training run needs; the metric and its direction come from the method config.
+defaults:
+  - util@model_checkpoint: model_checkpoint
+  - util@early_stopping: early_stopping
+  - util@lr_monitor: lr_monitor
+  - util@model_summary: model_summary
+  - util@rich_progress_bar: rich_progress_bar
+  - _self_
+
+model_checkpoint:
+  dirpath: ${paths.output_dir}/checkpoints
+  filename: "epoch_{epoch:03d}"
+  monitor: ${monitor}
+  mode: ${monitor_mode}
+  save_top_k: 1
+  # The last epoch as well, so a run stopped early still leaves a loadable checkpoint.
+  save_last: true
+  auto_insert_metric_name: false
+
+early_stopping:
+  monitor: ${monitor}
+  mode: ${monitor_mode}
+  # Matches the scheduler threshold, so sub-threshold noise counts for neither.
+  min_delta: 1.0e-4
+  patience: ${patience}

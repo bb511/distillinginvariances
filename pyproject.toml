@@ -1,0 +1,78 @@
+[project]
+name = "distilling-symmetries"
+version = "0.1.0"
+description = "Knowledge distillation of symmetries: translation on MNIST, permutation and Lorentz boosts on the hls4ml jets."
+authors = [
+    {name = "Patrick Odagiu", email = "patrickodagiu@gmail.com"},
+]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+
+requires-python = ">=3.11,<3.13"
+# pyarrow reads the parquet shards of both records, pillow decodes the MNIST images once,
+# scikit-learn cuts the folds and mlflow is the backend of MLFlowLogger.
+dependencies = [
+    "torch (==2.9.1+cu126)",
+    "lightning (>=2.6,<3)",
+    "torchmetrics (>=1.9,<2)",
+    "hydra-core (>=1.3.2,<2)",
+    "hydra-colorlog (>=1.2,<2)",
+    "rootutils (>=1.0.7,<2)",
+    "rich (>=13)",
+    "numpy (<2.5)",
+    "pyarrow (>=21,<26)",
+    "pillow (>=10)",
+    "omegaconf (>=2.3)",
+    "pyyaml (>=6,<7)",
+    "scikit-learn (>=1.4,<2)",
+    "mlflow (>=3.2,<4)",
+    "huggingface-hub (>=1.0)",
+]
+
+[dependency-groups]
+dev = [
+    "pytest (>=8,<10)",
+    "pre-commit (>=3.7,<5)",
+]
+
+# The CUDA 12.6 build of torch is not on PyPI, so it is pulled from the PyTorch index.
+[[tool.poetry.source]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+priority = "explicit"
+
+[tool.poetry.dependencies]
+torch = {source = "pytorch-cu126"}
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = [
+  "--color=yes",
+  "--durations=0",
+  "--strict-markers",
+  "--doctest-modules",
+]
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore::UserWarning",
+]
+log_cli = "True"
+markers = [
+  "slow: slow tests",
+]
+minversion = "6.0"
+testpaths = "tests/"
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: nocover",
+    "raise NotImplementedError",
+    "raise NotImplementedError()",
+    "if __name__ == .__main__.:",
+]

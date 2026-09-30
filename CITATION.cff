@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: Distilling symmetries
+type: software
+authors:
+  - family-names: Bicker
+    given-names: Yves
+  - family-names: Nobili
+    given-names: Nicole
+  - family-names: Odagiu
+    given-names: Patrick
+  - family-names: Schrag
+    given-names: Fabian
+repository-code: https://github.com/bb511/distillinginvariances
+license: Apache-2.0
+version: 0.1.0
+date-released: 2026-09-22

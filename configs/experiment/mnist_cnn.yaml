@@ -1,0 +1,29 @@
+# @package _global_
+
+# MNIST under the translation group: a circular CNN teacher and an MLP student.
+defaults:
+  - override /data: mnist
+  - override /net@teacher_net: cnn
+  - override /net@student_net: mlp_mnist
+  - override /trainer: gpu
+
+teacher: cnn_circular
+num_classes: 10
+input_shape: [1, 28, 28]
+
+tags: ["mnist", "cnn_circular", "translation"]
+experiment_name: distilling_symmetries_mnist_cnn
+
+data:
+  group: translation
+  # 128 for every stage here, as in the runs this study reproduces.
+  batch_size: 128
+
+teacher_lr: 1.0e-3
+teacher_batch_size: 128
+hint_lr: 1.0e-3
+relational_batch_size: 128
+
+# The old runs were recorded at float32 with TF32 off, and the reproduction keeps that.
+extras:
+  matmul_precision: highest

@@ -1,0 +1,20 @@
+_target_: lightning.pytorch.trainer.Trainer
+
+default_root_dir: ${paths.output_dir}
+
+# A floor of one epoch, so early stopping cannot end a run before any validation.
+min_epochs: 1
+# Every method config sets its own budget.
+max_epochs: 10
+
+accelerator: cpu
+devices: 1
+
+check_val_every_n_epoch: 1
+
+# Only the LorentzNet experiment clips; null leaves the gradients alone.
+gradient_clip_val: null
+
+# LorentzNet aggregates edges with index_add_, non-deterministic on CUDA, so run-to-run
+# reproducibility rests on seed_everything.
+deterministic: False

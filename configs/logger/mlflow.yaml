@@ -1,0 +1,11 @@
+# https://mlflow.org
+# Run `mlflow ui` inside logs/mlflow/ to browse the runs.
+
+mlflow:
+  _target_: lightning.pytorch.loggers.mlflow.MLFlowLogger
+  experiment_name: ${experiment_name}
+  run_name: ${run_name}
+  tracking_uri: file:${paths.log_dir}/mlflow/mlruns
+  tags: null
+  prefix: ""
+  artifact_location: null

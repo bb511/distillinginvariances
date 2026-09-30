@@ -1,0 +1,41 @@
+# @package _global_
+
+# Relational distillation: a discrepancy between the student's and the teacher's edges, over
+# sample pairs (lambda_is) and class pairs (lambda_ic), plus alpha CE. Longer and more patient
+# than the pointwise objectives, on a warm-up then cosine schedule rather than a plateau one.
+defaults:
+  - override /algorithm: distillation
+
+stage: relational
+hp_tag: ${algorithm.discrepancy}_lis${algorithm.lambda_is}_lic${algorithm.lambda_ic}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}
+
+monitor: val/acc
+monitor_mode: max
+patience: 60
+
+trainer:
+  max_epochs: 300
+
+data:
+  batch_size: ${relational_batch_size}
+  teacher_cache: ${teacher_cache}
+
+# A whole node, so that it replaces the plateau scheduler of algorithm/distillation.yaml rather
+# than merging into it and carrying the plateau's keyword arguments along.
+relational_scheduler:
+  scheduler:
+    _target_: src.algorithms.schedulers.warmup_cosine
+    _partial_: true
+    warmup_epochs: 10
+    max_epochs: ${trainer.max_epochs}
+    # The floor of the cosine, as a fraction of the peak rate.
+    min_lr_ratio: 0.01
+  monitor: ${monitor}
+  interval: epoch
+  frequency: 1
+
+algorithm:
+  objective: relational
+  lambda_is: 1.0
+  lambda_ic: 0.0
+  scheduler: ${relational_scheduler}

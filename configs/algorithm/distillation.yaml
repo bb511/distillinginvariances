@@ -1,0 +1,53 @@
+# A student trained against the cached teacher: hint, KD or relational, selected by objective.
+_target_: src.algorithms.distillation.DistillationModule
+
+_recursive_: false
+_convert_: all
+
+net: ${student_net}
+num_classes: ${num_classes}
+input_shape: ${input_shape}
+
+# The teacher is loaded at test time alone (the cache serves it during the fit), so it is absent
+# from the student's state_dict and from its FLOP count.
+teacher_net: ${teacher_net}
+teacher_ckpt: ${teacher_ckpt}
+
+# The hint run's checkpoint, for the stages that continue from it.
+warm_start_ckpt: null
+
+# hint | kd | relational, set by the method config.
+objective: kd
+
+# The second hidden layer of every student.
+guided_index: 1
+
+temperature: 4.0
+alpha: 0.0
+beta: 0.0
+
+discrepancy: cosine
+lambda_is: 1.0
+lambda_ic: 0.0
+
+# True in the hint stage alone, where the layers above the guided one stay at initialisation.
+freeze_above_guided: false
+
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: true
+  lr: 1.0e-3
+  weight_decay: 0.0
+
+scheduler:
+  scheduler:
+    _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+    _partial_: true
+    mode: ${monitor_mode}
+    patience: 20
+    factor: 0.1
+  monitor: ${monitor}
+  interval: epoch
+  frequency: 1
+
+compile: false

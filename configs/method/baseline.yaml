@@ -1,0 +1,18 @@
+# @package _global_
+
+# The student trained on the labels alone: the floor every distillation is measured against.
+defaults:
+  - override /algorithm: classifier
+
+stage: baseline
+hp_tag: lr${algorithm.optimizer.lr}
+
+monitor: val/acc
+monitor_mode: max
+patience: 30
+
+trainer:
+  max_epochs: 200
+
+algorithm:
+  net: ${student_net}

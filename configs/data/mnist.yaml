@@ -1,0 +1,34 @@
+# MNIST from the published parquet record, decoded once to uint8 arrays under cache_dir.
+_target_: src.data.mnist_datamodule.MNISTDataModule
+
+dataset: mnist
+
+repo_id: ylecun/mnist
+revision: 77f3279092a1c1579b2250db8eafed0ad422088c
+
+# The decoded arrays; the parquet snapshot itself goes to HF_HUB_CACHE.
+cache_dir: ${paths.base_data_dir}/mnist
+
+regime: canonical
+
+group: translation
+
+transform_seed: 20260820
+
+# max_shift null draws the circular shift uniformly over the whole 28 x 28 image.
+transform_kwargs:
+  max_shift: null
+
+transformed_dir: ${paths.base_data_dir}/transformed
+
+batch_size: 128
+# The images live in memory as one tensor, so a worker process would only add a copy.
+num_workers: 0
+pin_memory: true
+
+# The pool is the record's 60k train split; the 10k test split is never folded.
+n_folds: 5
+kfold_seed: 42
+fold_idx: ${fold_idx:${fold}}
+
+teacher_cache: null

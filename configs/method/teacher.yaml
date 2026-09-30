@@ -1,0 +1,24 @@
+# @package _global_
+
+# The teacher of this experiment, the reference every student of the cell is distilled from.
+defaults:
+  - override /algorithm: classifier
+
+stage: teacher
+hp_tag: lr${teacher_lr}
+
+monitor: val/acc
+monitor_mode: max
+patience: 30
+
+trainer:
+  max_epochs: 200
+
+data:
+  batch_size: ${teacher_batch_size}
+
+algorithm:
+  net: ${teacher_net}
+  # The teacher's own optimiser and scheduler, which the experiment config sets.
+  optimizer: ${teacher_optimizer}
+  scheduler: ${teacher_scheduler}

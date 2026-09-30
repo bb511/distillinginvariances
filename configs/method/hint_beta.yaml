@@ -1,0 +1,23 @@
+# @package _global_
+
+# KD from the hint checkpoint with the hint term continued: (1 - beta) main + beta scaled hint.
+defaults:
+  - override /algorithm: distillation
+
+stage: hint_beta
+hp_tag: T${algorithm.temperature}_a${algorithm.alpha}_b${algorithm.beta}_lr${algorithm.optimizer.lr}
+
+monitor: val/acc
+monitor_mode: max
+patience: 30
+
+trainer:
+  max_epochs: 200
+
+data:
+  teacher_cache: ${teacher_cache}
+
+algorithm:
+  objective: kd
+  beta: 0.25
+  warm_start_ckpt: ${hint_ckpt}

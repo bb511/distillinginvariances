@@ -1,0 +1,12 @@
+# @package _global_
+
+# 1% of the training jets and 5% of the validation and test jets.
+
+defaults:
+  - default
+
+trainer:
+  max_epochs: 3
+  limit_train_batches: 0.01
+  limit_val_batches: 0.05
+  limit_test_batches: 0.05

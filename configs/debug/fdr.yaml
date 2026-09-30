@@ -1,0 +1,9 @@
+# @package _global_
+
+# One train, one validation and one test step.
+
+defaults:
+  - default
+
+trainer:
+  fast_dev_run: true

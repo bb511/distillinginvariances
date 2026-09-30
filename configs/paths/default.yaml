@@ -1,0 +1,15 @@
+# Set PROJECT_ROOT in .env (see scripts/setup.sh). Every path below is relative to it, so nothing
+# depends on the working directory.
+root_dir: ${oc.env:PROJECT_ROOT}
+
+# Parent of the record's per-nconstituents caches; the hub snapshot goes to HF_HUB_CACHE.
+base_data_dir: ${paths.root_dir}/data
+
+log_dir: ${paths.root_dir}/logs
+
+# One directory per run, made by hydra; checkpoints go to its checkpoints/.
+output_dir: ${hydra:runtime.output_dir}
+
+results_dir: ${paths.root_dir}/results
+
+work_dir: ${hydra:runtime.cwd}

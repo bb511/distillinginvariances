@@ -1,0 +1,35 @@
+# The build copies pyproject.toml and poetry.lock alone; everything else is kept out of the
+# build context so a local checkout with data, logs, caches or checkpoints does not get sent
+# to the daemon.
+.git
+.claude
+.sublime
+sftp-config.json
+remote-sync-config.json
+.DS_Store
+.env
+.env.*
+
+/data
+/logs
+/outputs
+/results
+/results_archive
+/checkpoints
+notebooks
+PLAN_mlst_submission.md
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv
+venv/
+*.log
+*.out
+*.h5
+*.npz
+*.npy
+*.ckpt
+*.tar
+*.tar.gz

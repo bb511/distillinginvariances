@@ -1,0 +1,25 @@
+# @package _global_
+
+# Fit the student's guided layer to the teacher's hint. The layers above it stay at their
+# initialisation, so this stage is no classifier: it is the warm start of kd_hint and hint_beta.
+defaults:
+  - override /algorithm: distillation
+
+stage: hint
+hp_tag: lr${algorithm.optimizer.lr}
+
+monitor: val/hint_mse
+monitor_mode: min
+patience: 30
+
+trainer:
+  max_epochs: 200
+
+data:
+  teacher_cache: ${teacher_cache}
+
+algorithm:
+  objective: hint
+  freeze_above_guided: true
+  optimizer:
+    lr: ${hint_lr}

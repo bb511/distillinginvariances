@@ -1,0 +1,27 @@
+# @package _global_
+
+# The hls4ml jets under the permutation group: a Deep Sets teacher and an MLP student.
+defaults:
+  - override /data: jets
+  - override /net@teacher_net: deepsets
+  - override /net@student_net: mlp_jets
+  - override /trainer: gpu
+
+teacher: deepsets
+num_classes: 5
+input_shape: [32, 16]
+
+tags: ["jets", "deepsets", "permutation"]
+experiment_name: distilling_symmetries_jets_deepsets
+
+data:
+  group: permutation
+  batch_size: 1024
+
+teacher_lr: 3.2e-3
+teacher_batch_size: 128
+hint_lr: 1.0e-3
+relational_batch_size: 1024
+
+extras:
+  matmul_precision: highest

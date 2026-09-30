@@ -1,0 +1,46 @@
+# The hls4ml LHC jets. The record ships the split, the pT sorting and the normalisation in a
+# loader package of its own, so only the wrapper is configured here.
+_target_: src.data.jets_datamodule.JetsDataModule
+
+dataset: jets
+
+# The record ships executable code, so a run executes whatever is at this commit.
+revision: fc7104f60a45d528ab597b220d5a7cd8e31cfff8
+
+# The loader's per-nconstituents caches; the hub snapshot goes to HF_HUB_CACHE.
+cache_dir: ${paths.base_data_dir}/hf
+
+nconstituents: 32
+
+# canonical: the record as it is | transformed: one draw per jet before the fold split |
+# augmented: reserved for E5, a transform drawn afresh each epoch.
+regime: canonical
+
+# The group of the study, used by the transform of the transformed regime and by the
+# invariance probe in both regimes.
+group: permutation
+
+# Fixes the one-shot transform, so every fold and every stage sees the same transformed jets.
+transform_seed: 20260820
+
+# Half-width of the uniform rapidity of the isotropic boost, in units of rapidity: JetCLR's
+# range, within which the sample's jets sit (|eta| <~ 1.65).
+transform_kwargs:
+  lorentz_eta_max: 1.0
+  # Transpositions per jet for the permutation group; null is one uniform permutation.
+  n_swaps: null
+
+transformed_dir: ${paths.base_data_dir}/transformed
+
+batch_size: 1024
+# Loader processes; they persist across epochs so their copy of the shuffler advances.
+num_workers: 4
+pin_memory: true
+
+# The pool is the record's train and validation splits; the test split is never folded.
+n_folds: 5
+kfold_seed: 42
+fold_idx: ${fold_idx:${fold}}
+
+# The teacher's logits and hints, in pool row order; the distilling methods set it.
+teacher_cache: null

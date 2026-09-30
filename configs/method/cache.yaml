@@ -1,0 +1,22 @@
+# @package _global_
+
+# Not a training: src/cache.py loads the teacher of this cell and writes its logits and hints.
+# The run directory tracks the teacher's own, so a re-trained teacher caches somewhere new.
+defaults:
+  - override /algorithm: classifier
+
+stage: cache
+hp_tag: ${teacher_hp_tag}
+
+# Interpolated by the scheduler config; the cache stage runs no Lightning loop.
+monitor: val/acc
+monitor_mode: max
+patience: 30
+
+data:
+  batch_size: ${teacher_batch_size}
+
+algorithm:
+  net: ${teacher_net}
+  optimizer: ${teacher_optimizer}
+  scheduler: ${teacher_scheduler}

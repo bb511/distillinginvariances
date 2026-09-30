@@ -1,0 +1,11 @@
+# The jets teacher: a permutation-invariant Deep Sets tagger on [pt, etarel, phirel].
+_target_: src.algorithms.components.deepsets.DeepSetsInvariant
+in_dim: 3
+phi_layers: [32, 32, 32]
+rho_layers: [32]
+output_dim: ${num_classes}
+activation: relu
+aggregation: mean
+dropout: 0.0
+# The hint is the aggregated phi output at this depth, 32-d here.
+hint_depth: 3

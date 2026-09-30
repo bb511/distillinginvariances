@@ -1,0 +1,17 @@
+ignore_warnings: False
+
+# Prompts when the config carries no tag, and a multirun raises instead of prompting, so every
+# experiment config sets its own.
+enforce_tags: True
+
+print_config: True
+
+# torch.set_float32_matmul_precision: "high" buys tensor cores on Volta and later at some
+# accuracy; null leaves torch's own default alone.
+matmul_precision: null
+
+# torch.cuda.set_per_process_memory_fraction: several processes sharing one card each cache their
+# own high-water mark, and one that grows while the others hoard dies of OOM although the live
+# tensors of all of them fit; a cap makes a process release its cache before growing past its
+# share. null leaves torch alone; 0.32 for three workers on one card.
+gpu_memory_fraction: null

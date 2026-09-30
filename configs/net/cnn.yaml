@@ -1,0 +1,13 @@
+# The MNIST teacher: convolutions with circular padding, so a circular translation of the input
+# permutes the feature maps and the pooled invariant is exact.
+_target_: src.algorithms.components.cnn.CNNInvariant
+input_channels: 1
+phi_channels: [32, 64, 64]
+rho_layers: [128]
+output_dim: ${num_classes}
+activation: relu
+kernel_size: 3
+# E1 flips this to zeros for a teacher whose invariance is only approximate.
+padding_mode: circular
+# The hint is the pooled output of the phi block at this depth, 64-d here.
+hint_depth: 3

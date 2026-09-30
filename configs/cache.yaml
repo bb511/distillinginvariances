@@ -1,0 +1,38 @@
+# @package _global_
+
+# Write the teacher's logits and hints for one (dataset, teacher, regime, fold) to the .npz
+# every distilling stage of that cell trains against.
+defaults:
+  - _self_
+  - study: default
+  - data: jets
+  - net@teacher_net: deepsets
+  # Unused here, composed so that the experiment configs can override it.
+  - net@student_net: mlp_jets
+  - algorithm: classifier
+  - trainer: default
+  - paths: default
+  - extras: default
+  - hydra: default
+  - experiment: null
+  - method: cache
+  - optional local: default
+  - debug: null
+
+task_name: "cache"
+
+tags: ["dev"]
+
+experiment_name: distilling_symmetries_dev
+
+seed: 12345
+
+fold: 1
+
+run_stage: "cache"
+
+# Forward passes only, so a wider batch than training.
+batch_size_eval: 1024
+
+# The cache is rewritten only when its meta no longer matches; set to overwrite it regardless.
+allow_overwrite: false

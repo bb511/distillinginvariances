@@ -1,0 +1,10 @@
+# @package _global_
+
+# One epoch under Lightning's simple profiler; "advanced" and "pytorch" are finer but far costlier.
+
+defaults:
+  - default
+
+trainer:
+  max_epochs: 1
+  profiler: "simple"

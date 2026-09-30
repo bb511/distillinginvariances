@@ -1,0 +1,25 @@
+# @package _global_
+
+# KD from the hint stage's checkpoint, which is the paper's hint row (vocabulary.METHOD_OF_STAGE
+# exports it as method=hint). beta 0: the hint term is not carried into this stage.
+defaults:
+  - override /algorithm: distillation
+
+stage: kd_hint
+hp_tag: T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}
+
+monitor: val/acc
+monitor_mode: max
+patience: 30
+
+trainer:
+  max_epochs: 200
+
+data:
+  teacher_cache: ${teacher_cache}
+
+algorithm:
+  objective: kd
+  beta: 0.0
+  # train.py resolves this from hint_run_dir's manifest before instantiation.
+  warm_start_ckpt: ${hint_ckpt}

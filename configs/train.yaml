@@ -1,0 +1,51 @@
+# @package _global_
+
+# Later entries win, so _self_ comes first; the experiment sets the cell and the method, last,
+# sets the stage.
+defaults:
+  - _self_
+  - study: default
+  - data: jets
+  - net@teacher_net: deepsets
+  - net@student_net: mlp_jets
+  - algorithm: classifier
+  - callbacks: default
+  - trainer: default
+  - paths: default
+  - extras: default
+  - hydra: default
+  - logger: mlflow
+
+  # Pins one (dataset, teacher) pair; the regime and the fold stay command-line overrides.
+  - experiment: null
+
+  # The stage: what is optimised, for how long and on which metric. Last of the groups, so its
+  # epoch budget and its batch size win over the experiment's.
+  - method: teacher
+
+  # Machine-specific settings, excluded from version control, hence optional.
+  - optional local: default
+
+  - debug: null
+
+task_name: "train"
+
+# Overwrite with `tags="[first_tag, second_tag]"`; an empty list makes enforce_tags prompt.
+tags: ["dev"]
+
+experiment_name: distilling_symmetries_dev
+
+# One initialisation seed for every (stage, fold): the folds differ by their data alone.
+seed: 12345
+
+# 1..data.n_folds. There is no main run in a five-fold study, so this is never null.
+fold: 1
+
+# Logged so a training and its later evaluation are distinguishable in MLflow.
+run_stage: "train"
+
+# Resume a fit from this checkpoint.
+ckpt_path: null
+
+# A run directory already holding a manifest of a different config_hash refuses to start.
+allow_overwrite: false

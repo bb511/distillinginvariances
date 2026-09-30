@@ -1,0 +1,13 @@
+# @package _global_
+
+# Overfit three batches, which a working architecture drives to near-zero loss.
+
+defaults:
+  - default
+
+trainer:
+  max_epochs: 20
+  overfit_batches: 3
+
+# Checkpointing and early stopping would fire on a validation loop that never runs.
+callbacks: null

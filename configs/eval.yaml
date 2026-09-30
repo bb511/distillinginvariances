@@ -1,0 +1,63 @@
+# @package _global_
+
+# Evaluate one trained checkpoint: the fold split, then the test split at the temperature fitted
+# on the fold, and append the two rows to the results table.
+defaults:
+  - _self_
+  - study: default
+  - data: jets
+  - net@teacher_net: deepsets
+  - net@student_net: mlp_jets
+  - algorithm: classifier
+  - trainer: default
+  - paths: default
+  - extras: default
+  - hydra: default
+  - logger: mlflow
+  - experiment: null
+  - method: teacher
+  - optional local: default
+  - debug: null
+
+task_name: "eval"
+
+tags: ["dev"]
+
+experiment_name: distilling_symmetries_dev
+
+seed: 12345
+
+fold: 1
+
+run_stage: "eval"
+
+# The manifest src/train.py left in the run directory of this stage and hyperparameter point,
+# by the same convention; ckpt_path names a checkpoint directly instead, for a run with no manifest.
+checkpoint_manifest_path: ${paths.log_dir}/${train_task}/${run_dir}/checkpoint_manifest.json
+ckpt_path: null
+
+# The fold's validation half, on which the temperature is fitted, then the untouched test split.
+eval_splits: [fold, test]
+
+# The invariance probe: n_draws independent transforms per sample, the first of which also
+# serves the fidelity under the group action. lorentz_eta_max, max_shift and n_swaps are the
+# group's knobs, kept here rather than read from data.transform_kwargs so the probe can be
+# widened without retraining.
+probe:
+  n_draws: 10
+  lorentz_eta_max: 1.0
+  max_shift: null
+  # Transpositions composed into each permutation of the slots; null draws a uniform one.
+  n_swaps: null
+
+# The long-format results table; debug/default.yaml sets the path to null to keep a throwaway
+# evaluation out of results/.
+results:
+  path: ${paths.results_dir}/results.csv
+
+# Forward passes only, so a wider batch than training.
+batch_size_eval: 1024
+
+# Provenance a stage name alone does not carry, such as warm_hint for a relational student
+# warm-started from the hint checkpoint.
+variant: null

@@ -1,0 +1,13 @@
+# The Lorentz-invariant jets teacher (arXiv:2201.08187), at the paper's widths.
+_target_: src.algorithms.components.lorentznet.LorentzNetGraph
+hidden_dim: 96
+n_layers: 4
+output_dim: ${num_classes}
+# Step size of the coordinate update inside a block.
+c_weight: 1.0e-3
+dropout: 0.2
+# Two beam nodes, co-transformed with the jet, which fix the frame the scalars are read in.
+add_beams: true
+# In GeV, the reference's value.
+beam_mass: 1.0
+nconstituents: ${data.nconstituents}

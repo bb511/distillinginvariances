@@ -1,0 +1,43 @@
+# @package _global_
+
+# One full epoch on the CPU, callbacks and loggers off. The other debug configs inherit from this.
+
+task_name: "debug" # keeps these logs out of logs/train/
+
+# A debug walk reads the teacher and the hint checkpoints it trained itself, under logs/debug.
+train_task: debug
+
+# A debug teacher must not overwrite the cache the real runs read.
+teacher_cache: ${paths.log_dir}/${task_name}/teacher_cache/${data.dataset}/${teacher}/${data.regime}/fold_${fold}.npz
+
+# With these off, Lightning's own checkpoint callback writes the last epoch into the run
+# directory, so the manifest still names a loadable checkpoint, monitored by nothing.
+callbacks: null
+logger: null
+# A throwaway evaluation must not append to the real results tables; the node keeps its
+# shape so that results.path=<somewhere else> is a plain override.
+results:
+  path: null
+
+extras:
+  ignore_warnings: False
+  enforce_tags: False
+
+# https://hydra.cc/docs/tutorials/basic/running_your_app/logging/
+hydra:
+  job_logging:
+    root:
+      level: DEBUG
+
+trainer:
+  max_epochs: 1
+  # A debugger cannot step through a GPU kernel. This merges after the trainer group, so a
+  # debug run on a card takes the value overrides trainer.accelerator=gpu trainer.devices=[i].
+  accelerator: cpu
+  devices: 1 # one process, which is as far as a debugger follows
+  detect_anomaly: true # raise on a NaN or an infinity in any tensor
+
+data:
+  num_workers: 0 # load in the main process, for the same reason
+  pin_memory: False
+  n_folds: 2 # two folds, so a debug run fits one model rather than five

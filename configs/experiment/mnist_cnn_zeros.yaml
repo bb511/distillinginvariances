@@ -1,0 +1,13 @@
+# @package _global_
+
+# The E1 control: the MNIST cell with a zero-padded CNN, whose translation invariance is only
+# what it learns. Everything else is mnist_cnn.
+defaults:
+  - mnist_cnn
+
+teacher: cnn_zeros
+tags: ["mnist", "cnn_zeros", "translation"]
+experiment_name: distilling_symmetries_mnist_cnn_zeros
+
+teacher_net:
+  padding_mode: zeros

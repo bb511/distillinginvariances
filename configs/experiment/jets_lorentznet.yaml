@@ -1,0 +1,54 @@
+# @package _global_
+
+# The hls4ml jets under isotropic Lorentz boosts: a LorentzNet teacher and an MLP student.
+defaults:
+  - override /data: jets
+  - override /net@teacher_net: lorentznet
+  - override /net@student_net: mlp_jets
+  - override /trainer: gpu
+
+teacher: lorentznet
+num_classes: 5
+input_shape: [32, 16]
+
+tags: ["jets", "lorentznet", "lorentz_iso"]
+experiment_name: distilling_symmetries_jets_lorentznet
+
+data:
+  group: lorentz_iso
+  # Memory follows the squared multiplicity; 512 fits a 32 GB V100 at 32 constituents.
+  batch_size: 512
+
+teacher_lr: 5.0e-4
+teacher_batch_size: 128
+hint_lr: 1.0e-3
+relational_batch_size: 256
+
+# The teacher of the reference implementation: AdamW with decoupled decay, ten warm-up epochs
+# and then a cosine down to 5 % of the peak rate.
+teacher_optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: ${teacher_lr}
+  weight_decay: 0.01
+# A node of its own, interpolated whole: written out under teacher_scheduler it would merge
+# into the plateau scheduler of train.yaml, and its mode, patience and factor would then be
+# handed to warmup_cosine.
+lorentznet_teacher_scheduler:
+  scheduler:
+    _target_: src.algorithms.schedulers.warmup_cosine
+    _partial_: true
+    warmup_epochs: 10
+    max_epochs: ${trainer.max_epochs}
+    # The floor of the cosine, as a fraction of the peak rate.
+    min_lr_ratio: 0.05
+  monitor: ${monitor}
+  interval: epoch
+  frequency: 1
+teacher_scheduler: ${lorentznet_teacher_scheduler}
+
+trainer:
+  gradient_clip_val: 1.0 # as in the reference teacher recipe
+
+extras:
+  matmul_precision: highest

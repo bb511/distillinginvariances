@@ -1,0 +1,9 @@
+defaults:
+  - default
+
+accelerator: gpu
+devices: [0]
+
+# fp32 throughout: the old runs this study reproduces were recorded without TF32, and
+# de-normalised Minkowski norms overflow fp16.
+precision: 32
