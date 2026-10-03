@@ -14,9 +14,10 @@ from omegaconf import DictConfig, OmegaConf, open_dict
 # Before any src import: .env carries PROJECT_ROOT and HF_HUB_CACHE, both read at import time.
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True, dotenv=True)
 
-from src.utils.omegaconf import register_resolvers
+from src.utils.omegaconf import fold_value, register_resolvers
 
-# Before Hydra composes: the configs interpolate ${len:}, ${short_hash:} and ${fold_idx:}.
+# Before Hydra composes: the configs interpolate ${len:}, ${short_hash:}, ${fold_idx:},
+# ${fold_label:} and ${regime_of_teacher:}.
 register_resolvers()
 
 from src.utils import (
@@ -43,9 +44,10 @@ STAGES_WITHOUT_TEACHER = ("teacher", "baseline")
 
 
 def _check_fold(cfg: DictConfig) -> None:
-    """:raises ValueError: when ``fold`` is outside ``1..data.n_folds``."""
-    n_folds, fold = int(cfg.data.n_folds), int(cfg.fold)
-    if not 1 <= fold <= n_folds:
+    """:raises ValueError: when ``fold`` is set and outside ``1..data.n_folds``; null
+    is the main run."""
+    n_folds, fold = int(cfg.data.n_folds), cfg.get("fold")
+    if fold is not None and not 1 <= int(fold) <= n_folds:
         raise ValueError(f"fold={fold} is outside 1..{n_folds} (data.n_folds).")
 
 
@@ -138,7 +140,7 @@ def _write_manifest(cfg: DictConfig, trainer: Trainer, digest: str) -> None:
     best = trainer.callback_metrics.get(cfg.monitor)
     manifest = Manifest(
         stage=str(cfg.stage),
-        fold=int(cfg.fold),
+        fold=fold_value(cfg.fold),
         n_folds=int(cfg.data.n_folds),
         checkpoint_path=checkpoint_path,
         hydra_output_dir=str(cfg.paths.output_dir),
@@ -170,7 +172,7 @@ def train(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
     if objects["logger"]:
         log_hyperparameters(objects)
 
-    log.info(f"Starting the {cfg.stage} stage, fold {cfg.fold}!")
+    log.info(f"Starting the {cfg.stage} stage, {cfg.run_label}!")
     trainer: Trainer = objects["trainer"]
     trainer.fit(
         model=objects["algorithm"],

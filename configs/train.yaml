@@ -38,8 +38,11 @@ experiment_name: distilling_symmetries_dev
 # One initialisation seed for every (stage, fold): the folds differ by their data alone.
 seed: 12345
 
-# 1..data.n_folds. There is no main run in a five-fold study, so this is never null.
-fold: 1
+# One run per process. null: the main run, on the record's own split whatever data.n_folds says
+# (MNIST, which has none, holds out a seeded 10k of its training split); it serves the searches
+# and the quantised student, never the fold tables. An integer in 1..data.n_folds: that fold of
+# the pool, cut data.n_folds ways.
+fold: null
 
 # Logged so a training and its later evaluation are distinguishable in MLflow.
 run_stage: "train"

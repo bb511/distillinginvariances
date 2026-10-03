@@ -7,7 +7,7 @@
 # The export column naming the teacher architecture, and the shapes every net is built at.
 teacher: deepsets
 num_classes: 5
-input_shape: [32, 16]
+input_shape: [50, 16]
 
 # The teacher's recipe lives beside algorithm.*, so a student of the same experiment keeps its
 # own optimiser; method/teacher.yaml interpolates it into algorithm.
@@ -34,10 +34,14 @@ hint_lr: 1.0e-3
 
 relational_batch_size: 1024
 
+# "main" or "fold_<i>", derived from fold: the run's label in its run directory and its
+# teacher cache.
+run_label: ${fold_label:${fold},main}
+
 # hydra/default.yaml writes a single run to run_dir and a multirun point to
 # run_dir_parent/${hp_tag}, so the two land in the same place; stage and hp_tag come from the
 # method config.
-run_dir_parent: ${data.dataset}/${teacher}/${data.regime}/${stage}/fold_${fold}
+run_dir_parent: ${data.dataset}/${teacher}/${data.regime}/${stage}/${run_label}
 run_dir: ${run_dir_parent}/${hp_tag}
 
 # The MLflow run name: the hash of the output directory, unique per run.
@@ -48,9 +52,14 @@ run_name: ${short_hash:${hydra:runtime.output_dir},12}
 train_task: train
 teacher_hp_tag: lr${teacher_lr}
 hint_hp_tag: lr${hint_lr}
-teacher_run_dir: ${paths.log_dir}/${train_task}/${data.dataset}/${teacher}/${data.regime}/teacher/fold_${fold}/${teacher_hp_tag}
-hint_run_dir: ${paths.log_dir}/${train_task}/${data.dataset}/${teacher}/${data.regime}/hint/fold_${fold}/${hint_hp_tag}
-teacher_cache: ${paths.base_data_dir}/teacher_cache/${data.dataset}/${teacher}/${data.regime}/fold_${fold}.npz
+# The regime the teacher run and its cache come from: the augmented regime distils the
+# canonical teacher, whose outputs on a canonical row stand for any transform of it.
+teacher_regime: ${regime_of_teacher:${data.regime}}
+teacher_run_dir: ${paths.log_dir}/${train_task}/${data.dataset}/${teacher}/${teacher_regime}/teacher/${run_label}/${teacher_hp_tag}
+# The run's own regime: the augmented rows of E5 are baseline and KD only, so no augmented
+# stage reads a hint run.
+hint_run_dir: ${paths.log_dir}/${train_task}/${data.dataset}/${teacher}/${data.regime}/hint/${run_label}/${hint_hp_tag}
+teacher_cache: ${paths.base_data_dir}/teacher_cache/${data.dataset}/${teacher}/${teacher_regime}/${run_label}.npz
 
 # Filled by train.py from the manifests of the two run directories above, before instantiation.
 teacher_ckpt: null

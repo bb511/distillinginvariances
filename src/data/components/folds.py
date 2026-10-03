@@ -2,9 +2,18 @@
 
 A study fold cuts the pool (the record's training rows, plus its validation rows where
 the record has them) into a training and a validation half; the record's test split is
-never pooled and never folded. Both datamodules serve the same four splits, ``train``
-and ``fold`` being the two halves of the current fold, ``pool`` the whole pool in the
-stored order the teacher cache is written in, and ``test`` the untouched test set.
+never pooled and never folded. The main run takes its two halves from the record's own
+split instead, or from a seeded hold-out where the record has none. Both datamodules
+serve the same four splits: ``train`` and ``fold``, the two halves of the current fold
+or of the main split; ``pool``, the whole pool in the stored order the teacher cache is
+written in; and ``test``, the untouched test set.
+
+The regime sets what the splits hold. ``canonical`` serves the record as it is.
+``transformed`` replaces every pool and test row by one seeded draw from the group
+before any fold is cut; the draws are cached on disk, so every fold and every stage sees
+the same transformed rows. ``augmented`` serves the transformed regime's ``fold``,
+``pool`` and ``test`` rows and the canonical ``train`` rows, which its loader transforms
+afresh per batch.
 """
 
 from collections.abc import Iterator
@@ -12,14 +21,15 @@ from collections.abc import Iterator
 import numpy as np
 import torch
 from lightning import LightningDataModule
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 from torch.utils.data import DataLoader
 
+from src.data.components.augmentation import Transform, make_transform
 from src.data.components.dataset import TensorBatchDataset
 from src.data.components.teacher_cache import TeacherCache, read_cache
 from src.data.components.transformed import cached_transform, transformed_split
 from src.utils.pylogger import RankedLogger
-from src.vocabulary import GROUPS, REGIMES
+from src.vocabulary import GROUPS, MAIN_FOLD, REGIMES, TEACHER_REGIME
 
 log = RankedLogger(__name__, rank_zero_only=True)
 
@@ -43,17 +53,52 @@ def fold_indices(
     return torch.from_numpy(train_idx), torch.from_numpy(val_idx)
 
 
+def holdout_indices(n: int, n_val: int, seed: int) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return the training and validation row indices of a seeded hold-out of *n_val*.
+
+    The rows come back in the shuffled order ``train_test_split`` returns them in.
+    """
+    train_idx, val_idx = train_test_split(
+        np.arange(n), test_size=n_val, random_state=seed
+    )
+    return torch.from_numpy(train_idx), torch.from_numpy(val_idx)
+
+
 class FoldedDataModule(LightningDataModule):
     """Fold, transform and serve a pool and a test set held in memory.
 
-    A subclass supplies ``load_pool()`` and ``load_test()``, each returning the whole
-    split as ``(x, y)`` with one-hot labels, and fixes ``num_classes`` and
-    ``input_shape``. Everything downstream, the fold split, the transformed regime, the
-    loaders and the teacher-cache alignment, is the same for both datasets.
+    A subclass supplies the records; everything downstream, the fold split, the
+    transformed and augmented regimes, the loaders and the teacher-cache alignment, is
+    the same for every dataset. ``load_pool()`` returns the record's training split,
+    then its validation split where it has one, as ``(x, y)`` at the full stored width
+    with one-hot labels, shape (rows, classes); the teacher cache is written in its row
+    order. ``load_test()`` returns the record's test split in the same form, and it is
+    never pooled. ``main_split()`` returns the main run's training and validation row
+    indices into the pool: the record's own split, or `holdout_indices` where the record
+    has none. Every subclass fixes ``num_classes`` and ``input_shape``. A jet dataset
+    also fixes ``feature_names`` (the stored columns) and ``norm_scales`` (per column,
+    the factor back to GeV), which the transforms and the nets read, and
+    ``nconstituents``, which the key of a cached transform holds.
+
+    A later jet dataset (top tagging, JetClass) follows the hls4ml one. Its constituents
+    fill pT-ordered slots, zero-padded to ``nconstituents``; its columns include px, py,
+    pz and e, with z along the beam; its normalisation divides each column by a scale
+    alone, exposed as ``norm_scales``, so the padding stays zero and a transform can
+    take the momenta back to GeV; and every split is rebased with
+    `~src.data.components.augmentation.rebase_on_kept_axis` as it is loaded, so that
+    etarel, phirel, deltaR and ptrel are measured from the axis of the kept
+    constituents, as every transform measures them. No net may read erel, etarot,
+    phirot, costheta or costhetarel, which the four-vector transforms leave stale. Its
+    experiment config sets ``num_classes`` and ``input_shape`` to the subclass's values,
+    and it has its own data, experiment and ``mlp_<name>`` net configs and an entry in
+    `src.vocabulary.DATASETS`.
 
     :param transform_kwargs: the knobs of
         `~src.data.components.augmentation.apply_group` the regime draws with,
         ``lorentz_eta_max``, ``max_shift`` and ``n_swaps``.
+    :param fold_idx: the fold served, counted from zero; None serves ``main_split()``,
+        the main run, which does not fold, though *n_folds* is still recorded and
+        checked against the teacher cache.
     :param teacher_cache: path of the cache written by ``src/cache.py``, or None; when
         set, the training and validation loaders carry the teacher's logits and hints.
     """
@@ -78,7 +123,7 @@ class FoldedDataModule(LightningDataModule):
         pin_memory: bool,
         n_folds: int,
         kfold_seed: int,
-        fold_idx: int,
+        fold_idx: int | None,
         teacher_cache: str | None,
     ) -> None:
         super().__init__()
@@ -100,6 +145,8 @@ class FoldedDataModule(LightningDataModule):
         # Filled by setup(); each split is (x, y, matrices or None).
         self._pool: tuple[torch.Tensor, torch.Tensor, torch.Tensor | None] | None = None
         self._test: tuple[torch.Tensor, torch.Tensor, torch.Tensor | None] | None = None
+        # The untransformed pool the augmented regime trains on; None in the other two.
+        self._canonical_x: torch.Tensor | None = None
         self._folded: dict[str, tuple] = {}
         self._indices: tuple[torch.Tensor, torch.Tensor] | None = None
         self._cache: TeacherCache | None = None
@@ -110,14 +157,18 @@ class FoldedDataModule(LightningDataModule):
     def load_test(self) -> tuple[torch.Tensor, torch.Tensor]:
         raise NotImplementedError
 
+    def main_split(self) -> tuple[torch.Tensor, torch.Tensor]:
+        raise NotImplementedError
+
     def setup(self, stage: str | None = None) -> None:
         """Load both splits, transform them when the regime asks, and fold the pool."""
         if self._pool is None:
             self._load_splits()
 
-    def set_fold(self, fold_idx: int) -> None:
-        """Serve another fold of the same pool and transformed rows."""
-        if not 0 <= fold_idx < self.n_folds:
+    def set_fold(self, fold_idx: int | None) -> None:
+        """Serve another fold of the same pool and transformed rows; None serves the
+        main run."""
+        if fold_idx is not None and not 0 <= fold_idx < self.n_folds:
             raise ValueError(
                 f"fold_idx {fold_idx} is out of range for n_folds={self.n_folds}."
             )
@@ -128,8 +179,9 @@ class FoldedDataModule(LightningDataModule):
     def transform_matrices(self, split: str) -> torch.Tensor | None:
         """The per-row Lorentz matrices of *split*, shape (rows, 4, 4), or None.
 
-        Only ``lorentz_iso`` in the transformed regime has them; they act on [E, px, py,
-        pz] in GeV and are indexed like the rows of the split.
+        Only ``lorentz_iso`` has them, in the transformed regime and in every split of
+        the augmented regime but ``train``, whose canonical rows carry none; they act on
+        [E, px, py, pz] in GeV and are indexed like the rows of the split.
         """
         return self.split(split)[2]
 
@@ -153,7 +205,12 @@ class FoldedDataModule(LightningDataModule):
     def split(
         self, split: str
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
-        """The rows of *split* as ``(x, y, matrices or None)``, in stored order."""
+        """The rows of *split* as ``(x, y, matrices or None)``, in stored order.
+
+        In the augmented regime ``train`` holds the canonical rows, which its loader
+        transforms afresh per batch, and the other three splits hold the transformed
+        regime's.
+        """
         if split == "pool":
             return self._pool
         if split == "test":
@@ -182,6 +239,8 @@ class FoldedDataModule(LightningDataModule):
     def _load_splits(self) -> None:
         pool_x, pool_y = self.load_pool()
         test_x, test_y = self.load_test()
+        if self.regime == "augmented":
+            self._canonical_x = pool_x.float()
         pool_x, pool_m = self._maybe_transform("pool", pool_x, self.transform_seed)
         test_x, test_m = self._maybe_transform("test", test_x, self.transform_seed + 1)
         self._pool = (pool_x.float(), pool_y.float(), pool_m)
@@ -192,12 +251,12 @@ class FoldedDataModule(LightningDataModule):
     def _maybe_transform(
         self, split: str, x: torch.Tensor, seed: int
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        """Replace *split* by its transformed copy, before any fold split is taken."""
-        if self.regime == "augmented":
-            raise NotImplementedError(
-                "The augmented regime is a reserved hook; nothing implements it yet."
-            )
-        if self.regime != "transformed":
+        """Replace *split* by its transformed copy, before any fold split is taken.
+
+        The augmented regime reads the transformed regime's cached draws, whose key
+        names no regime, so its fold, pool and test rows are the transformed regime's.
+        """
+        if self.regime == "canonical":
             return x, None
         key = self._transform_key(split, seed, len(x))
         return cached_transform(self._transform_dir(seed), key, self._builder(x, seed))
@@ -235,21 +294,32 @@ class FoldedDataModule(LightningDataModule):
 
     def _fold_indices(self) -> tuple[torch.Tensor, torch.Tensor]:
         if self._indices is None:
-            n = len(self._pool[0])
-            self._indices = fold_indices(
-                n, self.n_folds, self.fold_idx, self.kfold_seed
-            )
+            self._indices = self._split_indices()
             log.info(
-                f"Fold {self.fold_idx + 1}/{self.n_folds}: "
+                f"{self._fold_name}: "
                 f"{len(self._indices[0])} train, {len(self._indices[1])} val rows"
             )
         return self._indices
+
+    def _split_indices(self) -> tuple[torch.Tensor, torch.Tensor]:
+        if self.fold_idx is None:
+            return self.main_split()
+        n = len(self._pool[0])
+        return fold_indices(n, self.n_folds, self.fold_idx, self.kfold_seed)
+
+    @property
+    def _fold_name(self) -> str:
+        if self.fold_idx is None:
+            return MAIN_FOLD
+        return f"Fold {self.fold_idx + 1}/{self.n_folds}"
 
     def _fold_rows(
         self, split: str
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
         idx = self._fold_indices()[0 if split == "train" else 1]
         x, y, matrices = self._pool
+        if split == "train" and self._canonical_x is not None:
+            return self._canonical_x[idx], y[idx], None
         return x[idx], y[idx], None if matrices is None else matrices[idx]
 
     def _read_teacher_cache(self) -> TeacherCache | None:
@@ -257,8 +327,8 @@ class FoldedDataModule(LightningDataModule):
             return None
         expect = {
             "dataset": self.dataset,
-            "regime": self.regime,
-            "fold": self.fold_idx + 1,
+            "regime": TEACHER_REGIME[self.regime],
+            "fold": MAIN_FOLD if self.fold_idx is None else self.fold_idx + 1,
             "n_folds": self.n_folds,
         }
         return read_cache(self.teacher_cache, expect)
@@ -267,7 +337,9 @@ class FoldedDataModule(LightningDataModule):
         """The teacher's logits and hints for *split*, aligned by the fold indices.
 
         The cache holds the pool in stored order, so the same indices that cut x and y
-        cut it too and the alignment needs no key of its own.
+        cut it too and the alignment needs no key of its own. In the augmented regime it
+        holds the canonical teacher's outputs on the canonical pool, which stand for any
+        transform of a row since the teacher is invariant.
         """
         if self._cache is None or split not in ("train", "fold"):
             return ()
@@ -286,6 +358,7 @@ class FoldedDataModule(LightningDataModule):
             *self._teacher_rows(split),
             batch_size=self.batch_size,
             shuffler=shuffler,
+            transform=self._train_transform(split),
         )
         return DataLoader(
             dataset=dataset,
@@ -294,6 +367,14 @@ class FoldedDataModule(LightningDataModule):
             persistent_workers=num_workers > 0,
             pin_memory=self.pin_memory,
             collate_fn=lambda batch: batch[0],
+        )
+
+    def _train_transform(self, split: str) -> Transform | None:
+        """The online augmentation of the training batches, None if the run has none."""
+        if self.regime != "augmented" or split != "train":
+            return None
+        return make_transform(
+            self.group, self.feature_names, self.norm_scales, **self.transform_kwargs
         )
 
 

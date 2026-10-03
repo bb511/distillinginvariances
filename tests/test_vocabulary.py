@@ -12,3 +12,9 @@ def test_the_contract_and_the_exported_methods() -> None:
     assert list(vocabulary.RESULT_COLUMNS) == CONTRACT.split(", ")
     assert set(vocabulary.METHOD_OF_STAGE) == set(vocabulary.STAGES) - {"cache", "hint"}
     assert set(vocabulary.METHOD_OF_STAGE.values()) <= set(vocabulary.METHODS)
+
+
+def test_every_regime_distils_a_teacher_of_a_regime_that_distils_itself() -> None:
+    assert set(vocabulary.TEACHER_REGIME) == set(vocabulary.REGIMES)
+    for teacher_regime in vocabulary.TEACHER_REGIME.values():
+        assert vocabulary.TEACHER_REGIME[teacher_regime] == teacher_regime

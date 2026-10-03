@@ -13,9 +13,10 @@ from omegaconf import DictConfig
 # Before any src import: .env carries PROJECT_ROOT and HF_HUB_CACHE, both read at import time.
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True, dotenv=True)
 
-from src.utils.omegaconf import register_resolvers
+from src.utils.omegaconf import fold_value, register_resolvers
 
-# Before Hydra composes: the configs interpolate ${short_hash:} and ${fold_idx:}.
+# Before Hydra composes: the configs interpolate ${short_hash:}, ${fold_idx:},
+# ${fold_label:} and ${regime_of_teacher:}.
 register_resolvers()
 
 from src.algorithms.classifier import Classifier
@@ -23,6 +24,7 @@ from src.data.components.teacher_cache import TeacherCache, read_cache, write_ca
 from src.metrics.evaluate import net_kwargs, resolve_device
 from src.utils import RankedLogger, extras
 from src.utils.checkpoints import Manifest, existing_manifest
+from src.vocabulary import TEACHER_REGIME
 
 log = RankedLogger(__name__, rank_zero_only=True)
 
@@ -34,6 +36,7 @@ def cache_teacher(cfg: DictConfig) -> Path:
     forward pass is paid once per (dataset, teacher, regime, fold) instead of once per
     epoch of every student.
     """
+    _check_regime(cfg)
     datamodule = _datamodule(cfg)
     manifest = _manifest(cfg.teacher_run_dir)
     teacher = _load(manifest.checkpoint_path, datamodule, resolve_device(cfg))
@@ -44,6 +47,21 @@ def cache_teacher(cfg: DictConfig) -> Path:
         return path
     _write(path, teacher, datamodule, cfg.get("batch_size_eval", 1024), meta)
     return path
+
+
+def _check_regime(cfg: DictConfig) -> None:
+    """Refuse a regime that distils another regime's teacher, before anything loads.
+
+    ``teacher_cache`` names the teacher regime's cache, which a run under this regime
+    would overwrite with the outputs on its own pool.
+    """
+    regime = cfg.data.regime
+    teacher_regime = TEACHER_REGIME[regime]
+    if teacher_regime != regime:
+        raise ValueError(
+            f"The {regime} regime distils the {teacher_regime} teacher and has no "
+            f"cache of its own: cache with data.regime={teacher_regime}."
+        )
 
 
 def _datamodule(cfg: DictConfig) -> LightningDataModule:
@@ -91,7 +109,7 @@ def _meta(
         "dataset": cfg.data.dataset,
         "teacher": cfg.teacher,
         "regime": cfg.data.regime,
-        "fold": cfg.fold,
+        "fold": fold_value(cfg.fold),
         "n_folds": cfg.data.n_folds,
         "teacher_ckpt": manifest.checkpoint_path,
         "hint_dim": int(teacher.net.hint_dim),

@@ -1,6 +1,6 @@
-# The jets student: a plain MLP on the 32 x 3 constituents flattened, with no symmetry of its own.
+# The jets student: a plain MLP on the 50 x 3 constituents flattened, with no symmetry of its own.
 _target_: src.algorithms.components.mlp.MLPStudent
-in_dim: 96
+in_dim: 150
 hidden: [64, 32, 32, 32]
 output_dim: ${num_classes}
 required_features: [pt, etarel, phirel]

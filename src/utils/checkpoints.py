@@ -46,7 +46,7 @@ class Manifest:
     """What eval.py and a downstream stage need to find one run's checkpoint."""
 
     stage: str
-    fold: int
+    fold: int | str  # 1..n_folds, or MAIN_FOLD for the main run
     n_folds: int
     checkpoint_path: str
     hydra_output_dir: str

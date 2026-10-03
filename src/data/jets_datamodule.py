@@ -3,7 +3,8 @@
 The record, https://huggingface.co/datasets/fastmachinelearning/hls4ml_lhc_jets_150p,
 contains its own processing pipeline that is being applied here. See the docs there for
 more details about the dataset and processing pipeline. Its train and validation splits
-are pooled and cut into folds; its test split is served untouched.
+are pooled and cut into folds, or kept as the record split them for the main run; its
+test split is served untouched.
 """
 
 import sys
@@ -52,9 +53,12 @@ class JetsDataModule(FoldedDataModule):
         the hub snapshot itself is set by ``HF_HUB_CACHE`` env variable.
     :param nconstituents: how many constituents to keep by leading pT for each jet.
     :param regime: ``canonical`` serves the record as it is, ``transformed`` replaces
-        every row by one draw from *group*, ``augmented`` is reserved.
-    :param group: the symmetry group of the study, whose draws the transformed regime
-        and the invariance probe share.
+        every row by one draw from *group*, ``augmented`` trains on the canonical rows
+        transformed afresh per batch and validates and tests as ``transformed`` does.
+    :param group: the symmetry group of the study, whose draws the transformed and
+        augmented regimes and the invariance probe share.
+    :param fold_idx: the fold served, counted from zero; None serves the record's own
+        train and validation split, the main run.
     """
 
     num_classes = NUM_CLASSES
@@ -64,7 +68,7 @@ class JetsDataModule(FoldedDataModule):
         revision: str | None = None,
         cache_dir: str = "data/hf",
         dataset: str = "jets",
-        nconstituents: int = 32,
+        nconstituents: int = 50,
         regime: str = "canonical",
         group: str = "permutation",
         transform_seed: int = 20260820,
@@ -75,7 +79,7 @@ class JetsDataModule(FoldedDataModule):
         pin_memory: bool = True,
         n_folds: int = 5,
         kfold_seed: int = 42,
-        fold_idx: int = 0,
+        fold_idx: int | None = 0,
         teacher_cache: str | None = None,
     ) -> None:
         super().__init__(
@@ -100,6 +104,8 @@ class JetsDataModule(FoldedDataModule):
         # Filled at instantiation.
         self.record = None
         self.feature_names: list[str] | None = None
+        # Filled by load_pool(): where the record's validation rows start in the pool.
+        self._n_train: int | None = None
 
     def prepare_data(self) -> None:
         """Fetch the record and run its pipeline; cached, so reruns are cheap."""
@@ -129,7 +135,13 @@ class JetsDataModule(FoldedDataModule):
         """The record's training and validation splits, pooled, in that order."""
         x_train, y_train = self._load("train")
         x_val, y_val = self._load("validation")
+        self._n_train = len(x_train)
         return torch.cat([x_train, x_val]), torch.cat([y_train, y_val])
+
+    def main_split(self) -> tuple[torch.Tensor, torch.Tensor]:
+        """The record's own split: its training rows, then its validation rows."""
+        n_pool = len(self.split("pool")[0])
+        return torch.arange(self._n_train), torch.arange(self._n_train, n_pool)
 
     def load_test(self) -> tuple[torch.Tensor, torch.Tensor]:
         return self._load("test")

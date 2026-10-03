@@ -10,14 +10,18 @@ revision: fc7104f60a45d528ab597b220d5a7cd8e31cfff8
 # The loader's per-nconstituents caches; the hub snapshot goes to HF_HUB_CACHE.
 cache_dir: ${paths.base_data_dir}/hf
 
-nconstituents: 32
+# The median multiplicity; the record builds cache_dir/nconst_50 from the hub snapshot on
+# first use.
+nconstituents: 50
 
 # canonical: the record as it is | transformed: one draw per jet before the fold split |
-# augmented: reserved for E5, a transform drawn afresh each epoch.
+# augmented (E5): the canonical training jets transformed afresh per batch, in the workers;
+# the fold, the pool and the test split as in the transformed regime; the teacher run and
+# its cache from the canonical regime.
 regime: canonical
 
-# The group of the study, used by the transform of the transformed regime and by the
-# invariance probe in both regimes.
+# The group of the study, used by the transforms of the transformed and augmented regimes
+# and by the invariance probe in every regime.
 group: permutation
 
 # Fixes the one-shot transform, so every fold and every stage sees the same transformed jets.
@@ -37,7 +41,9 @@ batch_size: 1024
 num_workers: 4
 pin_memory: true
 
-# The pool is the record's train and validation splits; the test split is never folded.
+# The pool is the record's train then validation splits; the test split is never folded. The
+# main run (fold null, so fold_idx null) serves the record's own train and validation split; it
+# does not fold, though n_folds is still recorded and checked against the teacher cache.
 n_folds: 5
 kfold_seed: 42
 fold_idx: ${fold_idx:${fold}}

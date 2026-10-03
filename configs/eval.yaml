@@ -27,7 +27,8 @@ experiment_name: distilling_symmetries_dev
 
 seed: 12345
 
-fold: 1
+# null: the main run; an integer in 1..data.n_folds: that fold (train.yaml).
+fold: null
 
 run_stage: "eval"
 

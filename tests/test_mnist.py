@@ -3,7 +3,13 @@ from pathlib import Path
 import pytest
 import torch
 
-from src.data.mnist_datamodule import MNIST_MEAN, MNIST_STD, MNISTDataModule
+from src.data.components.folds import holdout_indices
+from src.data.mnist_datamodule import (
+    MAIN_SPLIT_SEED,
+    MNIST_MEAN,
+    MNIST_STD,
+    MNISTDataModule,
+)
 from tests.conftest import needs_record
 
 pytestmark = needs_record
@@ -37,6 +43,19 @@ def test_the_digits_arrive_normalised_folded_and_with_the_test_split_whole(
         12_000,
     )
     assert len(datamodule.split("test")[0]) == 10_000
+
+
+def test_the_main_run_holds_out_a_seeded_ten_thousand(cache_dir: str) -> None:
+    datamodule = _datamodule(cache_dir, fold_idx=None)
+    pool = datamodule.split("pool")[0]
+    held_out = holdout_indices(60_000, 10_000, MAIN_SPLIT_SEED)[1]
+
+    assert (len(datamodule.split("train")[0]), len(datamodule.split("fold")[0])) == (
+        50_000,
+        10_000,
+    )
+    assert torch.equal(datamodule._fold_indices()[1], held_out)
+    assert torch.equal(datamodule.split("fold")[0], pool[held_out])
 
 
 def test_the_transformed_regime_moves_the_pixels_without_losing_any(

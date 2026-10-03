@@ -9,6 +9,10 @@ revision: 77f3279092a1c1579b2250db8eafed0ad422088c
 # The decoded arrays; the parquet snapshot itself goes to HF_HUB_CACHE.
 cache_dir: ${paths.base_data_dir}/mnist
 
+# canonical: the record as it is | transformed: one draw per image before the fold split |
+# augmented (E5): the canonical training images transformed afresh per batch; the fold, the
+# pool and the test split as in the transformed regime; the teacher run and its cache from
+# the canonical regime.
 regime: canonical
 
 group: translation
@@ -26,7 +30,9 @@ batch_size: 128
 num_workers: 0
 pin_memory: true
 
-# The pool is the record's 60k train split; the 10k test split is never folded.
+# The pool is the record's 60k train split; the 10k test split is never folded. The main run
+# (fold null, so fold_idx null) holds out a seeded 10k of the pool; it does not fold, though
+# n_folds is still recorded and checked against the teacher cache.
 n_folds: 5
 kfold_seed: 42
 fold_idx: ${fold_idx:${fold}}

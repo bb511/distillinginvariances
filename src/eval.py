@@ -11,9 +11,10 @@ from omegaconf import DictConfig, OmegaConf
 # Before any src import: .env carries PROJECT_ROOT and HF_HUB_CACHE, both read at import time.
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True, dotenv=True)
 
-from src.utils.omegaconf import register_resolvers
+from src.utils.omegaconf import fold_value, register_resolvers
 
-# Before Hydra composes: the configs interpolate ${short_hash:} and ${fold_idx:}.
+# Before Hydra composes: the configs interpolate ${short_hash:}, ${fold_idx:},
+# ${fold_label:} and ${regime_of_teacher:}.
 register_resolvers()
 
 from src import vocabulary
@@ -189,7 +190,7 @@ def _identity(cfg: DictConfig) -> dict[str, Any]:
         "lr": OmegaConf.select(cfg, "algorithm.optimizer.lr"),
         "batch_size": cfg.data.batch_size,
         "seed": cfg.seed,
-        "fold": cfg.fold,
+        "fold": fold_value(cfg.fold),
         "n_folds": cfg.data.n_folds,
         "group": cfg.data.group,
     } | knobs

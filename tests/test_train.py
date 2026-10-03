@@ -6,6 +6,7 @@ from omegaconf import DictConfig, open_dict
 
 from src.train import train
 from src.utils.checkpoints import config_hash, existing_manifest
+from src.vocabulary import MAIN_FOLD
 from tests.conftest import EXPERIMENTS, compose_root, needs_record, point_into
 
 pytestmark = needs_record
@@ -57,7 +58,7 @@ def test_one_batch_of_a_teacher_leaves_a_manifest_of_its_checkpoint(
         manifest.n_folds,
         manifest.epochs_run,
         manifest.config_hash,
-    ) == ("teacher", 1, 2, 1, digest)
+    ) == ("teacher", MAIN_FOLD, 2, 1, digest)
     assert float(metrics[cfg.monitor]) == pytest.approx(manifest.best_metric)
 
 
@@ -71,3 +72,9 @@ def test_a_finished_run_is_neither_repeated_nor_silently_overwritten(
         train(one_batch("mnist_cnn", tmp_path, "seed=1"))
     with pytest.raises(ValueError, match="fold="):
         train(one_batch("mnist_cnn", tmp_path, "fold=3"))
+
+
+def test_a_fold_run_records_its_fold_as_an_integer(tmp_path: Path) -> None:
+    train(one_batch("mnist_cnn", tmp_path, "fold=1"))
+
+    assert existing_manifest(tmp_path).fold == 1

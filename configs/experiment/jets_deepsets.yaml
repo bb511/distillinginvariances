@@ -9,7 +9,7 @@ defaults:
 
 teacher: deepsets
 num_classes: 5
-input_shape: [32, 16]
+input_shape: [50, 16]
 
 tags: ["jets", "deepsets", "permutation"]
 experiment_name: distilling_symmetries_jets_deepsets

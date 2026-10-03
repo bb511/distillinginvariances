@@ -45,19 +45,23 @@ def _compose(config: str, tmp_path: Path, stage: str, *overrides: str) -> DictCo
     return cfg
 
 
-def test_the_stages_chain_into_two_result_rows_per_checkpoint(tmp_path: Path) -> None:
+@pytest.mark.parametrize(("fold", "exported"), [("null", "main"), ("1", "1")])
+def test_the_stages_chain_into_two_result_rows_per_checkpoint(
+    fold: str, exported: str, tmp_path: Path
+) -> None:
     for stage, overrides in (
         ("teacher", ()),
         ("hint", ()),
         ("kd_hint", ("algorithm.temperature=2",)),
     ):
         if stage == "hint":
-            cache_teacher(_compose("cache.yaml", tmp_path, "cache"))
+            cache_teacher(_compose("cache.yaml", tmp_path, "cache", f"fold={fold}"))
         train(
             one_batch(
                 "mnist_cnn",
                 tmp_path / stage,
                 f"method={stage}",
+                f"fold={fold}",
                 *_upstream(tmp_path),
                 *overrides,
             )
@@ -70,6 +74,7 @@ def test_the_stages_chain_into_two_result_rows_per_checkpoint(tmp_path: Path) ->
             "eval.yaml",
             tmp_path,
             "kd_hint",
+            f"fold={fold}",
             "algorithm.temperature=2",
             f"checkpoint_manifest_path={manifest}",
             f"results.path={table}",
@@ -83,3 +88,4 @@ def test_the_stages_chain_into_two_result_rows_per_checkpoint(tmp_path: Path) ->
     assert header == list(RESULT_COLUMNS + PROVENANCE_COLUMNS)
     assert [row[header.index("eval_split")] for row in rows] == ["fold", "test"]
     assert {row[header.index("method")] for row in rows} == {"hint"}
+    assert {row[header.index("fold")] for row in rows} == {exported}

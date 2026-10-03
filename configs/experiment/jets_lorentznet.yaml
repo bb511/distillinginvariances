@@ -9,7 +9,7 @@ defaults:
 
 teacher: lorentznet
 num_classes: 5
-input_shape: [32, 16]
+input_shape: [50, 16]
 
 tags: ["jets", "lorentznet", "lorentz_iso"]
 experiment_name: distilling_symmetries_jets_lorentznet

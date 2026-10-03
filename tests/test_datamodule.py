@@ -37,7 +37,7 @@ def test_batches_carry_the_full_width_and_the_test_split_is_never_folded(
     pool, test, held_out = (canonical.split(s)[0] for s in ("pool", "test", "fold"))
 
     assert (
-        x.shape == (256, 32, 16)
+        x.shape == (256, 50, 16)
         and y.shape == (256, 5)
         and torch.equal(y.sum(1), torch.ones(256))
     )
@@ -45,6 +45,17 @@ def test_batches_carry_the_full_width_and_the_test_split_is_never_folded(
     canonical.set_fold(1)
     assert torch.equal(canonical.split("test")[0], test)
     assert not torch.equal(canonical.split("fold")[0][:64], held_out[:64])
+    canonical.set_fold(0)
+
+
+def test_the_main_run_validates_on_the_record_validation_split(
+    canonical: JetsDataModule,
+) -> None:
+    canonical.set_fold(None)
+    train, held_out = canonical.split("train")[0], canonical.split("fold")[0]
+
+    assert (len(train), len(held_out)) == (496_000, 124_000)
+    assert torch.equal(held_out, canonical._load("validation")[0])
     canonical.set_fold(0)
 
 

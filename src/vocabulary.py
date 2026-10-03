@@ -4,6 +4,13 @@
 DATASETS = ("mnist", "jets")
 TEACHERS = ("cnn_circular", "cnn_zeros", "deepsets", "lorentznet")
 REGIMES = ("canonical", "transformed", "augmented")
+# The regime whose teacher run and cache each regime distils from: an invariant
+# teacher's outputs on a canonical row stand for any transform of it.
+TEACHER_REGIME = {
+    "canonical": "canonical",
+    "transformed": "transformed",
+    "augmented": "canonical",
+}
 # translation, permutation and lorentz_iso are the groups of the study; the rest are kept so
 # augmentation.py stays a superset of the sibling repository's.
 GROUPS = ("translation", "permutation", "so2", "so3", "lorentz", "lorentz_iso")
@@ -21,6 +28,9 @@ METHODS = ("teacher", "baseline", "kd", "hint", "hint_beta", "relational", "cons
 OBJECTIVES = ("ce", "hint", "kd", "relational")
 DISCREPANCIES = ("mse", "cosine", "smooth_l1", "distance_mse")
 EVAL_SPLITS = ("fold", "test")
+# The fold the manifest, the cache meta and the result rows carry for the main run (fold
+# null); the folds themselves are the integers 1..n_folds.
+MAIN_FOLD = "main"
 
 # The exported method of each trained stage. The hint stage itself is no classifier (its
 # layers above the guided one stay at initialisation), so the paper's hint row is the KD
