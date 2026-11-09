@@ -82,56 +82,56 @@
 
 # 3. kd  canonical  T x alpha grid  [folds]
 # python3 src/train.py -m experiment=jets_lorentznet_m2 method=kd algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,1 algorithm.optimizer.lr=TODO_LR_KD_C \
+#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,1 algorithm.optimizer.lr=0.003144488838025729 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 4. kd_hint  canonical  T x alpha grid (exported as method=hint)  [folds]
 # python3 src/train.py -m experiment=jets_lorentznet_m2 method=kd_hint algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,1 algorithm.optimizer.lr=TODO_LR_HINT_C \
+#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,1 algorithm.optimizer.lr=0.0009403641842918084 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 5. logit_matching  canonical  alpha 0  [folds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=logit_matching algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_LOGIT_C \
+#     algorithm.alpha=0 algorithm.optimizer.lr=0.0036303760732131728 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 6. relational  canonical  alpha 0  [seeds] [folds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=relational algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.discrepancy=cosine algorithm.alpha=0 algorithm.lambda_is=TODO_LIS_A0_C \
-#     algorithm.lambda_ic=TODO_LIC_A0_C algorithm.optimizer.lr=TODO_LR_REL_A0_C \
+#     algorithm.discrepancy=cosine algorithm.alpha=0 algorithm.lambda_is=45.60011257235895 \
+#     algorithm.lambda_ic=9.034612790026392 algorithm.optimizer.lr=0.0020556652997365263 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 7. relational  canonical  alpha 1  [seeds] [folds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=relational algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.discrepancy=cosine algorithm.alpha=1 algorithm.lambda_is=TODO_LIS_A1_C \
-#     algorithm.lambda_ic=TODO_LIC_A1_C algorithm.optimizer.lr=TODO_LR_REL_A1_C \
+#     algorithm.discrepancy=cosine algorithm.alpha=1 algorithm.lambda_is=3.437903390231893 \
+#     algorithm.lambda_ic=0.8657311805789505 algorithm.optimizer.lr=0.0018121196716329618 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 8. kd  transformed  T x alpha grid  [folds]
 # python3 src/train.py -m experiment=jets_lorentznet_m2 method=kd algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
-#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,1 algorithm.optimizer.lr=TODO_LR_KD_X \
+#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,1 algorithm.optimizer.lr=0.0027625564527090462 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 9. kd_hint  transformed  T x alpha grid  [folds]
 # python3 src/train.py -m experiment=jets_lorentznet_m2 method=kd_hint algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
-#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,1 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,1 algorithm.optimizer.lr=0.00032809353377207364 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 10. logit_matching  transformed  alpha 0  [folds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=logit_matching algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
-#     algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_LOGIT_X \
+#     algorithm.alpha=0 algorithm.optimizer.lr=0.0036303760732131728 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 11. relational  transformed  alpha 0  [seeds] [folds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=relational algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
-#     algorithm.discrepancy=cosine algorithm.alpha=0 algorithm.lambda_is=TODO_LIS_A0_X \
-#     algorithm.lambda_ic=TODO_LIC_A0_X algorithm.optimizer.lr=TODO_LR_REL_A0_X \
+#     algorithm.discrepancy=cosine algorithm.alpha=0 algorithm.lambda_is=29.96075663081402 \
+#     algorithm.lambda_ic=0.9403538994851475 algorithm.optimizer.lr=0.0016746863339222257 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 12. relational  transformed  alpha 1  [seeds] [folds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=relational algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
-#     algorithm.discrepancy=cosine algorithm.alpha=1 algorithm.lambda_is=TODO_LIS_A1_X \
-#     algorithm.lambda_ic=TODO_LIC_A1_X algorithm.optimizer.lr=TODO_LR_REL_A1_X \
+#     algorithm.discrepancy=cosine algorithm.alpha=1 algorithm.lambda_is=161.83909664448743 \
+#     algorithm.lambda_ic=0.5753119628930268 algorithm.optimizer.lr=0.006026183188595793 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # ======================================================================
@@ -140,54 +140,54 @@
 
 # 13. kd  canonical  alpha 0  headline  [seeds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=kd algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_KD_C \
+#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.003144488838025729 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 14. kd  canonical  alpha 1  headline  [seeds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=kd algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.temperature=TODO_T_KD_A1_C algorithm.alpha=1 algorithm.optimizer.lr=TODO_LR_KD_C \
+#     algorithm.temperature=TODO_T_KD_A1_C algorithm.alpha=1 algorithm.optimizer.lr=0.003144488838025729 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 15. kd_hint  canonical  alpha 0  headline  [seeds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=kd_hint algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_HINT_C \
+#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0009403641842918084 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 16. kd_hint  canonical  alpha 1  headline  [seeds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=kd_hint algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.temperature=TODO_T_HINT_A1_C algorithm.alpha=1 algorithm.optimizer.lr=TODO_LR_HINT_C \
+#     algorithm.temperature=TODO_T_HINT_A1_C algorithm.alpha=1 algorithm.optimizer.lr=0.0009403641842918084 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 17. kd  transformed  alpha 0  headline  [seeds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=kd algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
-#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_KD_X \
+#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 18. kd  transformed  alpha 1  headline  [seeds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=kd algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
-#     algorithm.temperature=TODO_T_KD_A1_X algorithm.alpha=1 algorithm.optimizer.lr=TODO_LR_KD_X \
+#     algorithm.temperature=TODO_T_KD_A1_X algorithm.alpha=1 algorithm.optimizer.lr=0.0027625564527090462 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 19. kd_hint  transformed  alpha 0  headline  [seeds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=kd_hint algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.00032809353377207364 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 20. kd_hint  transformed  alpha 1  headline  [seeds]
 # python3 src/train.py experiment=jets_lorentznet_m2 method=kd_hint algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
-#     algorithm.temperature=TODO_T_HINT_A1_X algorithm.alpha=1 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.temperature=TODO_T_HINT_A1_X algorithm.alpha=1 algorithm.optimizer.lr=0.00032809353377207364 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 21. hint_beta  transformed  alpha 0  beta grid  [folds]
 # python3 src/train.py -m experiment=jets_lorentznet_m2 method=hint_beta algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
 #     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 \
-#     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=0.00032809353377207364 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 22. hint_beta  transformed  alpha 1  beta grid  [folds]
 # python3 src/train.py -m experiment=jets_lorentznet_m2 method=hint_beta algorithm.optimizer.weight_decay=1e-06 data.regime=transformed \
 #     algorithm.temperature=TODO_T_HINT_A1_X algorithm.alpha=1 \
-#     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=0.00032809353377207364 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 23. control jetformer: hint  canonical  [seeds] [folds]
@@ -200,40 +200,40 @@
 
 # 25. control jetformer: kd  canonical  alpha 0  [seeds] [folds]
 # python3 src/train.py experiment=jets_jetformer method=kd algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_KD_C \
+#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.003144488838025729 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 26. control jetformer: kd  canonical  alpha 1  [seeds] [folds]
 # python3 src/train.py experiment=jets_jetformer method=kd algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.temperature=TODO_T_KD_A1_C algorithm.alpha=1 algorithm.optimizer.lr=TODO_LR_KD_C \
+#     algorithm.temperature=TODO_T_KD_A1_C algorithm.alpha=1 algorithm.optimizer.lr=0.003144488838025729 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 27. control jetformer: kd_hint  canonical  alpha 0  [seeds] [folds]
 # python3 src/train.py experiment=jets_jetformer method=kd_hint algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_HINT_C \
+#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0009403641842918084 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 28. control jetformer: kd_hint  canonical  alpha 1  [seeds] [folds]
 # python3 src/train.py experiment=jets_jetformer method=kd_hint algorithm.optimizer.weight_decay=1e-06 data.regime=canonical \
-#     algorithm.temperature=TODO_T_HINT_A1_C algorithm.alpha=1 algorithm.optimizer.lr=TODO_LR_HINT_C \
+#     algorithm.temperature=TODO_T_HINT_A1_C algorithm.alpha=1 algorithm.optimizer.lr=0.0009403641842918084 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 29. control jetformer: kd  transformed  alpha 0  [seeds] [folds]
 # python3 src/train.py experiment=jets_jetformer method=kd algorithm.optimizer.weight_decay=1e-06 data.regime=transformed data.group=lorentz_iso \
-#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_KD_X \
+#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 30. control jetformer: kd  transformed  alpha 1  [seeds] [folds]
 # python3 src/train.py experiment=jets_jetformer method=kd algorithm.optimizer.weight_decay=1e-06 data.regime=transformed data.group=lorentz_iso \
-#     algorithm.temperature=TODO_T_KD_A1_X algorithm.alpha=1 algorithm.optimizer.lr=TODO_LR_KD_X \
+#     algorithm.temperature=TODO_T_KD_A1_X algorithm.alpha=1 algorithm.optimizer.lr=0.0027625564527090462 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 31. control jetformer: kd_hint  transformed  alpha 0  [seeds] [folds]
 # python3 src/train.py experiment=jets_jetformer method=kd_hint algorithm.optimizer.weight_decay=1e-06 data.regime=transformed data.group=lorentz_iso \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.00032809353377207364 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 32. control jetformer: kd_hint  transformed  alpha 1  [seeds] [folds]
 # python3 src/train.py experiment=jets_jetformer method=kd_hint algorithm.optimizer.weight_decay=1e-06 data.regime=transformed data.group=lorentz_iso \
-#     algorithm.temperature=TODO_T_HINT_A1_X algorithm.alpha=1 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.temperature=TODO_T_HINT_A1_X algorithm.alpha=1 algorithm.optimizer.lr=0.00032809353377207364 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition

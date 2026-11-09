@@ -100,56 +100,56 @@
 
 # 10. kd  canonical  T x alpha grid  [folds]
 # python3 src/eval.py -m experiment=mnist_cnn method=kd data.regime=canonical data.group=translation \
-#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,2 algorithm.optimizer.lr=TODO_LR_KD_C \
+#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,2 algorithm.optimizer.lr=0.0027625564527090462 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 11. kd_hint  canonical  T x alpha grid  [folds]
 # python3 src/eval.py -m experiment=mnist_cnn method=kd_hint data.regime=canonical data.group=translation \
-#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,2 algorithm.optimizer.lr=TODO_LR_HINT_C \
+#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,2 algorithm.optimizer.lr=0.0036303760732131728 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 12. logit_matching  canonical  alpha 0  [folds]
 # python3 src/eval.py experiment=mnist_cnn method=logit_matching data.regime=canonical data.group=translation \
-#     algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_LOGIT_C \
+#     algorithm.alpha=0 algorithm.optimizer.lr=0.0033465180076422503 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 13. relational  canonical  alpha 0  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn method=relational data.regime=canonical data.group=translation \
-#     algorithm.discrepancy=cosine algorithm.alpha=0 algorithm.lambda_is=TODO_LIS_A0_C \
-#     algorithm.lambda_ic=TODO_LIC_A0_C algorithm.optimizer.lr=TODO_LR_REL_A0_C \
+#     algorithm.discrepancy=cosine algorithm.alpha=0 algorithm.lambda_is=1.8719208042450481 \
+#     algorithm.lambda_ic=22.830195410660377 algorithm.optimizer.lr=0.0073020857975766695 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 14. relational  canonical  alpha 2  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn method=relational data.regime=canonical data.group=translation \
-#     algorithm.discrepancy=cosine algorithm.alpha=2 algorithm.lambda_is=TODO_LIS_A2_C \
-#     algorithm.lambda_ic=TODO_LIC_A2_C algorithm.optimizer.lr=TODO_LR_REL_A2_C \
+#     algorithm.discrepancy=cosine algorithm.alpha=2 algorithm.lambda_is=0.5126685560125409 \
+#     algorithm.lambda_ic=12.659652847015726 algorithm.optimizer.lr=0.00994036098299559 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 15. kd  transformed  T x alpha grid  [folds]
 # python3 src/eval.py -m experiment=mnist_cnn method=kd data.regime=transformed data.group=translation \
-#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,2 algorithm.optimizer.lr=TODO_LR_KD_X \
+#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,2 algorithm.optimizer.lr=0.0037214926657368383 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 16. kd_hint  transformed  T x alpha grid  [folds]
 # python3 src/eval.py -m experiment=mnist_cnn method=kd_hint data.regime=transformed data.group=translation \
-#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,2 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.temperature=1,2,4,8,16 algorithm.alpha=0,2 algorithm.optimizer.lr=0.008082117583015577 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 17. logit_matching  transformed  alpha 0  [folds]
 # python3 src/eval.py experiment=mnist_cnn method=logit_matching data.regime=transformed data.group=translation \
-#     algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_LOGIT_X \
+#     algorithm.alpha=0 algorithm.optimizer.lr=0.008082117583015577 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 18. relational  transformed  alpha 0  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn method=relational data.regime=transformed data.group=translation \
-#     algorithm.discrepancy=cosine algorithm.alpha=0 algorithm.lambda_is=TODO_LIS_A0_X \
-#     algorithm.lambda_ic=TODO_LIC_A0_X algorithm.optimizer.lr=TODO_LR_REL_A0_X \
+#     algorithm.discrepancy=cosine algorithm.alpha=0 algorithm.lambda_is=131.1210640602283 \
+#     algorithm.lambda_ic=10.421322042642588 algorithm.optimizer.lr=0.003645917883913076 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 19. relational  transformed  alpha 2  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn method=relational data.regime=transformed data.group=translation \
-#     algorithm.discrepancy=cosine algorithm.alpha=2 algorithm.lambda_is=TODO_LIS_A2_X \
-#     algorithm.lambda_ic=TODO_LIC_A2_X algorithm.optimizer.lr=TODO_LR_REL_A2_X \
+#     algorithm.discrepancy=cosine algorithm.alpha=2 algorithm.lambda_is=1.6927389645255555 \
+#     algorithm.lambda_ic=6.421207563312898 algorithm.optimizer.lr=0.00934575380356406 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # ======================================================================
@@ -158,92 +158,92 @@
 
 # 20. kd  canonical  alpha 0  headline  [seeds]
 # python3 src/eval.py experiment=mnist_cnn method=kd data.regime=canonical data.group=translation \
-#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_KD_C \
+#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 21. kd  canonical  alpha 2  headline  [seeds]
 # python3 src/eval.py experiment=mnist_cnn method=kd data.regime=canonical data.group=translation \
-#     algorithm.temperature=TODO_T_KD_A2_C algorithm.alpha=2 algorithm.optimizer.lr=TODO_LR_KD_C \
+#     algorithm.temperature=TODO_T_KD_A2_C algorithm.alpha=2 algorithm.optimizer.lr=0.0027625564527090462 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 22. kd_hint  canonical  alpha 0  headline  [seeds]
 # python3 src/eval.py experiment=mnist_cnn method=kd_hint data.regime=canonical data.group=translation \
-#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_HINT_C \
+#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0036303760732131728 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 23. kd_hint  canonical  alpha 2  headline  [seeds]
 # python3 src/eval.py experiment=mnist_cnn method=kd_hint data.regime=canonical data.group=translation \
-#     algorithm.temperature=TODO_T_HINT_A2_C algorithm.alpha=2 algorithm.optimizer.lr=TODO_LR_HINT_C \
+#     algorithm.temperature=TODO_T_HINT_A2_C algorithm.alpha=2 algorithm.optimizer.lr=0.0036303760732131728 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 24. kd  transformed  alpha 0  headline  [seeds]
 # python3 src/eval.py experiment=mnist_cnn method=kd data.regime=transformed data.group=translation \
-#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_KD_X \
+#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.0037214926657368383 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 25. kd  transformed  alpha 2  headline  [seeds]
 # python3 src/eval.py experiment=mnist_cnn method=kd data.regime=transformed data.group=translation \
-#     algorithm.temperature=TODO_T_KD_A2_X algorithm.alpha=2 algorithm.optimizer.lr=TODO_LR_KD_X \
+#     algorithm.temperature=TODO_T_KD_A2_X algorithm.alpha=2 algorithm.optimizer.lr=0.0037214926657368383 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 26. kd_hint  transformed  alpha 0  headline  [seeds]
 # python3 src/eval.py experiment=mnist_cnn method=kd_hint data.regime=transformed data.group=translation \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.008082117583015577 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 27. kd_hint  transformed  alpha 2  headline  [seeds]
 # python3 src/eval.py experiment=mnist_cnn method=kd_hint data.regime=transformed data.group=translation \
-#     algorithm.temperature=TODO_T_HINT_A2_X algorithm.alpha=2 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.temperature=TODO_T_HINT_A2_X algorithm.alpha=2 algorithm.optimizer.lr=0.008082117583015577 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 28. hint_beta  transformed  alpha 0  beta grid  [folds]
 # python3 src/eval.py -m experiment=mnist_cnn method=hint_beta data.regime=transformed data.group=translation \
 #     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 \
-#     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=0.008082117583015577 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 29. hint_beta  transformed  alpha 2  beta grid  [folds]
 # python3 src/eval.py -m experiment=mnist_cnn method=hint_beta data.regime=transformed data.group=translation \
 #     algorithm.temperature=TODO_T_HINT_A2_X algorithm.alpha=2 \
-#     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=0.008082117583015577 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 30. control cnn_zeros: kd  canonical  alpha 0  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn_zeros method=kd data.regime=canonical data.group=translation \
-#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_KD_C \
+#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 31. control cnn_zeros: kd  canonical  alpha 2  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn_zeros method=kd data.regime=canonical data.group=translation \
-#     algorithm.temperature=TODO_T_KD_A2_C algorithm.alpha=2 algorithm.optimizer.lr=TODO_LR_KD_C \
+#     algorithm.temperature=TODO_T_KD_A2_C algorithm.alpha=2 algorithm.optimizer.lr=0.0027625564527090462 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 32. control cnn_zeros: kd_hint  canonical  alpha 0  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn_zeros method=kd_hint data.regime=canonical data.group=translation \
-#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_HINT_C \
+#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0036303760732131728 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 33. control cnn_zeros: kd_hint  canonical  alpha 2  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn_zeros method=kd_hint data.regime=canonical data.group=translation \
-#     algorithm.temperature=TODO_T_HINT_A2_C algorithm.alpha=2 algorithm.optimizer.lr=TODO_LR_HINT_C \
+#     algorithm.temperature=TODO_T_HINT_A2_C algorithm.alpha=2 algorithm.optimizer.lr=0.0036303760732131728 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 34. control cnn_zeros: kd  transformed  alpha 0  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn_zeros method=kd data.regime=transformed data.group=translation \
-#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_KD_X \
+#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.0037214926657368383 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 35. control cnn_zeros: kd  transformed  alpha 2  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn_zeros method=kd data.regime=transformed data.group=translation \
-#     algorithm.temperature=TODO_T_KD_A2_X algorithm.alpha=2 algorithm.optimizer.lr=TODO_LR_KD_X \
+#     algorithm.temperature=TODO_T_KD_A2_X algorithm.alpha=2 algorithm.optimizer.lr=0.0037214926657368383 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 36. control cnn_zeros: kd_hint  transformed  alpha 0  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn_zeros method=kd_hint data.regime=transformed data.group=translation \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.008082117583015577 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 37. control cnn_zeros: kd_hint  transformed  alpha 2  [seeds] [folds]
 # python3 src/eval.py experiment=mnist_cnn_zeros method=kd_hint data.regime=transformed data.group=translation \
-#     algorithm.temperature=TODO_T_HINT_A2_X algorithm.alpha=2 algorithm.optimizer.lr=TODO_LR_HINT_X \
+#     algorithm.temperature=TODO_T_HINT_A2_X algorithm.alpha=2 algorithm.optimizer.lr=0.008082117583015577 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
