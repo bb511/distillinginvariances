@@ -1,0 +1,53 @@
+# The top-quark tagging reference set (Zenodo 2603256), two classes, qcd and top. The record's
+# three HDF5 files are converted once into nconst_<N>/ under cache_dir, with the sibling
+# repository's columns, scales and meta.json.
+_target_: src.data.top_tagging_datamodule.TopTaggingDataModule
+
+dataset: top_tagging
+
+cache_dir: ${paths.base_data_dir}/top_tagging
+
+# The raw files, downloaded here when absent or corrupt and only read otherwise; on olgpu,
+# data.raw_dir=/data/deodagiu/jet_tagging_gdl/data/top_tagging/raw reads the sibling's copy.
+raw_dir: ${.cache_dir}/raw
+
+# The sibling's multiplicity, which truncates 0.5 % of the training jets.
+nconstituents: 100
+
+# canonical: the record as it is | transformed: one draw per jet before the fold split |
+# augmented (E5): the canonical training jets transformed afresh per batch, in the workers;
+# the fold, the pool and the test split as in the transformed regime; the teacher run and
+# its cache from the canonical regime.
+regime: canonical
+
+# The group of the study, used by the transforms of the transformed and augmented regimes
+# and by the invariance probe in every regime.
+group: lorentz_iso
+
+# Fixes the one-shot transform, so every fold and every stage sees the same transformed jets.
+transform_seed: 20260820
+
+# Half-width of the uniform rapidity of the boosts, in units of rapidity, as for the hls4ml
+# jets; n_swaps is the number of transpositions per jet under the permutation group, null a
+# uniform permutation.
+transform_kwargs:
+  lorentz_eta_max: 1.0
+  n_swaps: null
+
+# Per multiplicity: a draw stored under another key is redrawn in place.
+transformed_dir: ${paths.base_data_dir}/transformed/nconst_${.nconstituents}
+
+batch_size: 1024
+# Loader processes; they persist across epochs so their copy of the shuffler advances.
+num_workers: 4
+pin_memory: true
+
+# The pool is the record's train then validation splits; the test split is never folded. The
+# main run (fold null, so fold_idx null) serves the record's own train and validation split; it
+# does not fold, though n_folds is still recorded and checked against the teacher cache.
+n_folds: 5
+kfold_seed: 42
+fold_idx: ${fold_idx:${fold}}
+
+# The teacher's logits and hints, in pool row order; the distilling methods set it.
+teacher_cache: null

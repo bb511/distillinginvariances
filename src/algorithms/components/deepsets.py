@@ -1,23 +1,45 @@
-"""Permutation-invariant Deep Sets, the jets teacher of the cheap regime."""
+"""Permutation-invariant Deep Sets (arXiv:1703.06114), the jets teacher of the cheap
+regime.
 
-from collections.abc import Callable
+A port of ``DeepSetsNet`` of the sibling repository, jet_tagging_gdl
+(src/algorithms/deepsets.py), without its jet moments: ``phi`` and ``rho`` keep its
+submodule names and layer order, so its checkpoints load with ``strict=True``.
+"""
 
 import torch
-from torch import nn
 
 from src.algorithms.components import FeatureNet, activation_module, mlp_head
 
-AGGREGATIONS = {
-    "mean": lambda t: t.mean(dim=1),
-    "max": lambda t: t.max(dim=1).values,
-}
+AGGREGATIONS = ("sum", "max", "sum_over_n")
 
 
-class DeepSetsInvariant(FeatureNet):
-    """Per-constituent phi, an aggregation over the constituents, then rho.
+def _masked_pool(h: torch.Tensor, real: torch.Tensor, aggregation: str) -> torch.Tensor:
+    """Pool (jets, constituents, width) over the real constituents, to (jets, width).
 
-    :param phi_layers: widths of the per-constituent stack, one entry per depth.
-    :param hint_depth: depth, one-based, whose aggregated output a student reproduces.
+    :param real: (jets, constituents, 1), True for a real constituent.
+    :param aggregation: one of `AGGREGATIONS`; ``sum_over_n`` divides the masked sum by
+        the slot count, the same for every jet, where a mean would divide by each jet's
+        multiplicity.
+    """
+    if aggregation == "max":
+        return h.masked_fill(~real, float("-inf")).amax(dim=1)
+    total = (h * real).sum(dim=1)
+    return total if aggregation == "sum" else total / h.shape[1]
+
+
+class DeepSetsNet(FeatureNet):
+    """Apply phi to every constituent, pool over the real ones, then read the pool with
+    rho.
+
+    A padded constituent is an all-zero row and is left out of the pool, so the output
+    ignores the padding and is invariant under any permutation of the slots. The hint is
+    the pooled vector rho reads.
+
+    :param phi_layers: widths of the per-constituent network, the last being the width
+        of the pooled vector and of the hint.
+    :param rho_layers: hidden widths of the head applied to the pooled vector.
+    :param aggregation: one of `AGGREGATIONS`.
+    :param dropout: before every linear layer of rho, as in the sibling.
     """
 
     required_features = ["pt", "etarel", "phirel"]
@@ -25,55 +47,31 @@ class DeepSetsInvariant(FeatureNet):
     def __init__(
         self,
         in_dim: int = 3,
-        phi_layers: tuple[int, ...] = (32, 32, 32),
-        rho_layers: tuple[int, ...] = (32,),
+        phi_layers: tuple[int, ...] = (64, 64, 32),
+        rho_layers: tuple[int, ...] = (64, 32),
         output_dim: int = 5,
         activation: str = "relu",
-        aggregation: str = "mean",
+        aggregation: str = "sum",
         dropout: float = 0.0,
-        hint_depth: int = 3,
     ) -> None:
         super().__init__()
-        self.hint_depth = hint_depth
-        self.hint_dim = phi_layers[hint_depth - 1]
-        self.phi = self._build_phi(in_dim, phi_layers, activation)
-        self.aggregate = self._get_aggregation(aggregation)
+        if aggregation not in AGGREGATIONS:
+            raise ValueError(
+                f"aggregation must be one of {list(AGGREGATIONS)}, got {aggregation!r}"
+            )
+        self.aggregation = aggregation
+        self.hint_dim = phi_layers[-1]
+        # The sibling's phi ends in an activation and its rho does not; both keep their
+        # linear layers at the even indices.
+        self.phi = mlp_head(in_dim, phi_layers[:-1], phi_layers[-1], activation)
+        self.phi.append(activation_module(activation))
         self.rho = mlp_head(phi_layers[-1], rho_layers, output_dim, activation, dropout)
 
-    @staticmethod
-    def _build_phi(
-        in_dim: int, layers: tuple[int, ...], activation: str
-    ) -> nn.Sequential:
-        """One linear layer and one activation per depth, applied constituent-wise.
-
-        A padded constituent is an all-zero row, which the biases map to a non-zero
-        value; it is not masked, as in the architecture of the paper.
-        """
-        sizes = [in_dim, *layers]
-        phi = nn.Sequential()
-        for index in range(len(sizes) - 1):
-            phi.append(nn.Linear(sizes[index], sizes[index + 1]))
-            phi.append(activation_module(activation))
-        return phi
-
-    @staticmethod
-    def _get_aggregation(name: str) -> Callable[[torch.Tensor], torch.Tensor]:
-        if name not in AGGREGATIONS:
-            raise ValueError(
-                f"aggregation must be one of {list(AGGREGATIONS)}, got {name!r}"
-            )
-        return AGGREGATIONS[name]
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.rho(self.aggregate(self.phi(x)))
+        return self.forward_with_hint(x)[0]
 
     def forward_with_hint(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Return the logits and the aggregated activations at `hint_depth`."""
-        # Two modules per depth, so the activation of depth d sits at index 2d - 1.
-        hint_at = 2 * self.hint_depth - 1
-        hint = None
-        for index, layer in enumerate(self.phi):
-            x = layer(x)
-            if index == hint_at:
-                hint = self.aggregate(x)
-        return self.rho(self.aggregate(x)), hint
+        """Return the logits and the pooled phi output, (jets, ``hint_dim``)."""
+        real = x.abs().sum(dim=-1, keepdim=True) > 0
+        pooled = _masked_pool(self.phi(x), real, self.aggregation)
+        return self.rho(pooled), pooled

@@ -9,7 +9,8 @@ defaults:
 
 teacher: lorentznet
 num_classes: 5
-input_shape: [50, 16]
+# The 16 record columns and m2, which the teacher reads as its node scalar.
+input_shape: [50, 17]
 
 tags: ["jets", "lorentznet", "lorentz_iso"]
 experiment_name: distilling_symmetries_jets_lorentznet
@@ -19,36 +20,22 @@ data:
   # Memory follows the squared multiplicity; 512 fits a 32 GB V100 at 32 constituents.
   batch_size: 512
 
-teacher_lr: 5.0e-4
-teacher_batch_size: 128
+# The recipe of the sibling's 50-constituent row, read from its checkpoints and its runs'
+# .hydra/config.yaml, so that hp_tag and config_hash name the teacher src/import_teacher.py
+# brings in: Adam without weight decay, the plateau scheduler at patience 80. The sibling
+# trained in float32 with TF32 matmuls (matmul_precision high) and stopped early after 100
+# epochs without improvement; those settings stay this study's own. Batch 1024 takes about
+# 22 GB at 50 constituents.
+teacher_lr: 0.0016106992417331738
+teacher_batch_size: 1024
+teacher_scheduler:
+  scheduler:
+    patience: 80
 hint_lr: 1.0e-3
 relational_batch_size: 256
 
-# The teacher of the reference implementation: AdamW with decoupled decay, ten warm-up epochs
-# and then a cosine down to 5 % of the peak rate.
-teacher_optimizer:
-  _target_: torch.optim.AdamW
-  _partial_: true
-  lr: ${teacher_lr}
-  weight_decay: 0.01
-# A node of its own, interpolated whole: written out under teacher_scheduler it would merge
-# into the plateau scheduler of train.yaml, and its mode, patience and factor would then be
-# handed to warmup_cosine.
-lorentznet_teacher_scheduler:
-  scheduler:
-    _target_: src.algorithms.schedulers.warmup_cosine
-    _partial_: true
-    warmup_epochs: 10
-    max_epochs: ${trainer.max_epochs}
-    # The floor of the cosine, as a fraction of the peak rate.
-    min_lr_ratio: 0.05
-  monitor: ${monitor}
-  interval: epoch
-  frequency: 1
-teacher_scheduler: ${lorentznet_teacher_scheduler}
-
 trainer:
-  gradient_clip_val: 1.0 # as in the reference teacher recipe
+  gradient_clip_val: 1.0 # as in the sibling's teacher recipe
 
 extras:
   matmul_precision: highest

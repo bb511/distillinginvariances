@@ -1,0 +1,9 @@
+# The control teacher of the Deep Sets cell: a plain MLP on the 50 x 3 constituents flattened,
+# at the architecture of the sibling's 50-constituent row (jet_tagging_gdl,
+# pt_etarel_phirel/mlp/nconst50/baseline), whose checkpoints src/import_teacher.py loads.
+_target_: src.algorithms.components.mlp_control.MLPControl
+in_dim: 150
+# The last width is that of the hint.
+hidden: [128, 64, 32]
+output_dim: ${num_classes}
+batchnorm: true

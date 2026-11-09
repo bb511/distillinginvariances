@@ -23,6 +23,10 @@ defaults:
   # epoch budget and its batch size win over the experiment's.
   - method: teacher
 
+  # An Optuna search over the stage; after the method, so its space wins over the stage's
+  # values, and before debug, so a debug run still shortens it.
+  - hparams_search: null
+
   # Machine-specific settings, excluded from version control, hence optional.
   - optional local: default
 
@@ -52,3 +56,10 @@ ckpt_path: null
 
 # A run directory already holding a manifest of a different config_hash refuses to start.
 allow_overwrite: false
+
+# The metric main() returns for Optuna to maximise; null outside a search.
+optimized_metric: null
+
+# Multiply-accumulates per sample above which train.py scores the run 0 without building the
+# data; only the student searches set it.
+max_macs: null

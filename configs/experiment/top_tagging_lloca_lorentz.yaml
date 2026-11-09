@@ -1,0 +1,58 @@
+# @package _global_
+
+# The top-tagging set at 100 constituents under isotropic Lorentz boosts, with the sibling's
+# LLoCa-Lorentz as the teacher. Student I and Distillation I set the top-tagging student; the
+# student keys stay at the study's defaults until then.
+defaults:
+  - override /data: top_tagging
+  - override /net@teacher_net: lloca
+  - override /trainer: gpu
+
+teacher: lloca_lorentz
+num_classes: 2
+input_shape: [100, 9]
+
+tags: ["top_tagging", "lloca_lorentz", "lorentz_iso"]
+experiment_name: distilling_symmetries_top_tagging_lloca_lorentz
+
+data:
+  group: lorentz_iso
+
+# The architecture and recipe of the sibling's row (jet_tagging_gdl,
+# top_tagging/lloca_lorentz/nconst100/baseline), read from its checkpoints and its runs'
+# .hydra/config.yaml, so that hp_tag and config_hash name the teacher src/import_teacher.py
+# brings in: Lion and a two-cycle cosine schedule stepped per batch over 32 epochs of 9460
+# batches of 128 jets. Neither lion_pytorch nor the sibling's schedule
+# (src/algorithms/utils/schedules.py there) is available here, so this teacher is imported,
+# not retrained. The sibling also trained compiled, in float32 with TF32 matmuls and with
+# gradients clipped at 1.0; the trainer settings stay this study's own.
+teacher_net:
+  frames: lorentz
+  num_blocks: 12
+  num_heads: 8
+  attn_scalars: 12
+  attn_vectors: 1
+  mlp_factor: 2
+  dropout: 0.0
+  framesnet_hidden: 128
+  framesnet_dropout: 0.1
+teacher_lr: 3.0e-5
+teacher_batch_size: 128
+teacher_optimizer:
+  _target_: lion_pytorch.Lion
+  weight_decay: 2.0
+  betas: [0.9, 0.999]
+# A node of its own, interpolated whole, so that it replaces the plateau scheduler of the study
+# config rather than merging into it.
+top_tagging_lloca_scheduler:
+  scheduler:
+    _target_: src.algorithms.utils.schedules.cosine_restarts
+    _partial_: true
+    total_steps: 302720
+    cycles: 2
+  interval: step
+  frequency: 1
+teacher_scheduler: ${top_tagging_lloca_scheduler}
+
+extras:
+  matmul_precision: highest

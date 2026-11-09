@@ -8,11 +8,11 @@ import torch
 def jsd(p: torch.Tensor, q: torch.Tensor) -> torch.Tensor:
     """Jensen-Shannon divergence of two ``(rows, classes)`` probability tensors.
 
-    Base 2, so the divergence of two disjoint distributions is exactly 1 and every
-    similarity of the study is reported as ``1 - jsd``.
+    Base 2, so the divergence of two disjoint distributions is exactly 1 and its square
+    root, the distance the study reports, lies in [0, 1].
 
-    :return: ``(rows,)``; the clamp removes the rounding that takes a pair of identical
-        rows a few ulp outside [0, 1].
+    :return: shape ``(rows,)``; the clamp removes the rounding that takes a pair of
+        identical rows a few ulp outside [0, 1].
     """
     middle = 0.5 * (p + q)
     # The mixture vanishes only where both arguments do, and xlogy is zero there.

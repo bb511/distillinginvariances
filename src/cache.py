@@ -24,7 +24,7 @@ from src.data.components.teacher_cache import TeacherCache, read_cache, write_ca
 from src.metrics.evaluate import net_kwargs, resolve_device
 from src.utils import RankedLogger, extras
 from src.utils.checkpoints import Manifest, existing_manifest
-from src.vocabulary import TEACHER_REGIME
+from src.vocabulary import TEACHER_REGIME, regime_tag
 
 log = RankedLogger(__name__, rank_zero_only=True)
 
@@ -108,7 +108,7 @@ def _meta(
     return {
         "dataset": cfg.data.dataset,
         "teacher": cfg.teacher,
-        "regime": cfg.data.regime,
+        "regime": regime_tag(cfg.data.regime, cfg.data.group),
         "fold": fold_value(cfg.fold),
         "n_folds": cfg.data.n_folds,
         "teacher_ckpt": manifest.checkpoint_path,

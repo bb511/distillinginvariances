@@ -1,0 +1,32 @@
+# @package _global_
+
+# Import one teacher checkpoint of the sibling repository, jet_tagging_gdl, as a finished run of
+# the teacher stage. Composed from train.yaml, so that the same experiment, fold and debug
+# overrides give the configuration train.py would build, with its config_hash, and the run
+# directory train.py would fill; train.py at that configuration then returns early.
+defaults:
+  - train
+  - _self_
+
+task_name: "import"
+run_stage: "import"
+
+# The sibling's best checkpoint of this teacher and fold, epoch_XXX.ckpt: under
+# <run>/checkpoints/ for the main run, under <run>/fold_<i>/checkpoints/ for fold i.
+source_ckpt: ???
+
+# From the sibling's state-dict keys to this module's: the keys dropped, then the prefixes
+# renamed. Empty for DeepSets, whose keys are the same in both; a teacher whose sibling module
+# registers a buffer this one lacks (DenormalisedModule's denorm_scales) drops it here. Set on
+# the command line with a leading +, since a dict override of these empty nodes is refused:
+# LorentzNet takes +source_key_renames={denorm_scales:net.denorm_scales} and the MLP control
+# +source_key_renames={net.1.net.:net.layers.}.
+source_drop_keys: []
+source_key_renames: {}
+
+# train.py's run directory: train_task is what train.py's task_name is, train or debug.
+hydra:
+  run:
+    dir: ${paths.log_dir}/${train_task}/${run_dir}
+  sweep:
+    dir: ${paths.log_dir}/${train_task}/${run_dir_parent}

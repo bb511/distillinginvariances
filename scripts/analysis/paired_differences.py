@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Per-fold differences between one method and a reference, with a bootstrap interval.
+"""Per-fold differences between one method and a reference, with the corrected t-test.
 
-Each fold's run is compared with the reference run of the same cell and the same fold, so
-the fold-to-fold spread of the pool cancels. The interval is a percentile bootstrap over
-the per-fold differences, a description of five paired numbers rather than a test: the
-folds share the pool and are not independent.
+Each fold's run is compared with the reference run of the same cell and the same fold,
+on the same rows under the same probe, so the fold-to-fold spread of the pool cancels.
+The folds share most of their training rows, so the mean difference is tested by the
+corrected resampled t-test (`src.utils.statistics`, ratio n_test / n_train = 1 / (K - 1),
+0.25 for five folds); with --margin, the TOST p-value for a difference within it is
+added.
 
     python3 scripts/analysis/paired_differences.py --method kd
     python3 scripts/analysis/paired_differences.py --method relational --baseline kd \\
@@ -22,14 +24,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from src.utils.bootstrap import bootstrap_ci  # noqa: E402
+from src.utils.statistics import corrected_t, equivalence_p  # noqa: E402
+from src.vocabulary import MAIN_FOLD  # noqa: E402
 
-# The cell a pairing happens inside, plus the two knobs a method shares with the method it is
-# compared against (kd against hint at one temperature, say).
-JOIN = ("dataset", "teacher", "regime", "fold", "temperature", "alpha")
+# The rows a pair must share beside its cell: the data evaluated and the probe.
+PROBE = (
+    "eval_data",
+    "probe_group",
+    "probe_eta_max",
+    "probe_max_shift",
+    "probe_n_swaps",
+)
+# The two knobs a method shares with the method it is compared against (kd against hint at
+# one temperature, say); a baseline carries neither.
+SHARED_KNOBS = ("temperature", "alpha")
+# The cell a pairing happens inside, the fold, the probe and the shared knobs.
+JOIN = ("dataset", "teacher", "regime", "fold", *PROBE, *SHARED_KNOBS)
 # What the pairs are reported per, the fold having been averaged out of them.
-CELL = ("dataset", "teacher", "regime", "temperature", "alpha")
-METRICS = ("accuracy", "nll", "ece", "fid_top1", "inv_1mjsd")
+CELL = ("dataset", "teacher", "regime", *PROBE, *SHARED_KNOBS)
+METRICS = ("accuracy", "nll", "ece", "fid_top1", "inv_top1", "inv_sqrtjsd")
 OUT_COLUMNS = (
     *CELL,
     "method",
@@ -38,8 +51,14 @@ OUT_COLUMNS = (
     "metric",
     "n_folds",
     "mean_delta",
+    "se",
+    "t",
+    "df",
+    "p_value",
     "ci_low",
     "ci_high",
+    "margin",
+    "tost_p",
 )
 
 
@@ -55,13 +74,16 @@ def _number(value: str) -> float:
         return float("nan")
 
 
+_SHORT = len(JOIN) - len(SHARED_KNOBS)
+
+
 def _index(rows: list[dict[str, str]]) -> dict[tuple[str, ...], dict[str, str]]:
     # Both keys: a baseline carries no temperature and no alpha, so the full key of a
     # distilled run never matches it and the short key is what finds it.
     index: dict[tuple[str, ...], dict[str, str]] = {}
     for row in rows:
         index[tuple(row[column] for column in JOIN)] = row
-        index.setdefault(tuple(row[column] for column in JOIN[:4]), row)
+        index.setdefault(tuple(row[column] for column in JOIN[:_SHORT]), row)
     return index
 
 
@@ -71,7 +93,7 @@ def _pairs(
     pairs: dict[tuple[str, ...], list[tuple[dict[str, str], dict[str, str]]]] = {}
     for row in rows:
         key = tuple(row[column] for column in JOIN)
-        other = reference.get(key) or reference.get(key[:4])
+        other = reference.get(key) or reference.get(key[:_SHORT])
         if other is not None:
             pairs.setdefault(tuple(row[column] for column in CELL), []).append(
                 (row, other)
@@ -82,8 +104,13 @@ def _pairs(
 def _select(
     rows: list[dict[str, str]], method: str, split: str
 ) -> list[dict[str, str]]:
+    # The main run is no fold, so it never enters a per-fold difference.
     return [
-        row for row in rows if row["method"] == method and row["eval_split"] == split
+        row
+        for row in rows
+        if row["method"] == method
+        and row["eval_split"] == split
+        and row["fold"] != MAIN_FOLD
     ]
 
 
@@ -97,18 +124,15 @@ def _deltas(
 def _row(
     key: tuple[str, ...], deltas: list[float], metric: str, args: argparse.Namespace
 ) -> dict[str, object]:
-    # One fold gives one difference and no interval, which bootstrap_ci reports as NaN.
-    low, high = bootstrap_ci(deltas)
-    return {
-        **dict(zip(CELL, key)),
-        "method": args.method,
-        "reference": args.baseline,
-        "eval_split": args.split,
-        "metric": metric,
-        "n_folds": len(deltas),
-        "mean_delta": sum(deltas) / len(deltas),
-        "ci_low": low,
-        "ci_high": high,
+    test = corrected_t(deltas, args.ratio)
+    cells = dict(zip(CELL, key)) | {"method": args.method, "reference": args.baseline}
+    cells |= {"eval_split": args.split, "metric": metric, "n_folds": len(deltas)}
+    cells |= {"mean_delta": test.pop("mean")} | test
+    if args.margin is None:
+        return cells
+    return cells | {
+        "margin": args.margin,
+        "tost_p": equivalence_p(deltas, args.ratio, args.margin),
     }
 
 
@@ -162,6 +186,8 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--split", default="test", choices=("fold", "test"))
     parser.add_argument("--metrics", nargs="+", default=list(METRICS))
+    parser.add_argument("--ratio", type=float, default=0.25, help="n_test / n_train")
+    parser.add_argument("--margin", type=float, default=None, help="TOST margin")
     return parser.parse_args()
 
 

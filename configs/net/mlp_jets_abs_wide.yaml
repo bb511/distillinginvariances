@@ -1,0 +1,7 @@
+# The capacity control of the LLoCa-z cell: the selected [pt, eta, phi] stack at twice its widths,
+# about four times its multiply-accumulates, unsearched.
+defaults:
+  - mlp_jets_abs
+  - _self_
+
+width_factor: 2

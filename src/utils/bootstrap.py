@@ -1,7 +1,9 @@
-"""Bootstrap the spread of a quantity measured once per cross-validation fold.
+"""Bootstrap intervals, across folds and within one model.
 
-The results table uses this for two things: a percentile interval on a fold-averaged
-quantity, and a two-sided test on a per-fold difference between a run and its baseline.
+Across folds: a percentile interval on a fold-averaged quantity, and a two-sided test on
+a per-fold difference between a run and its baseline. Within a model: the column means
+of per-sample values over resamplings of the samples, from which the decomposition and
+coverage tables take their intervals.
 """
 
 from collections.abc import Sequence
@@ -59,3 +61,29 @@ def bootstrap_pvalue(
         return 1.0
     means = _resample_means(sample - observed, n_boot, seed)
     return float(np.mean(np.abs(means) >= abs(observed)))
+
+
+def resampled_column_means(
+    values: np.ndarray, n_boot: int = 1000, seed: int = 0
+) -> np.ndarray:
+    """Column means of ``(rows, columns)`` *values* over *n_boot* resamplings of its
+    rows, shape ``(n_boot, columns)``.
+
+    Each resampling counts how often each row is drawn and averages with those counts as
+    weights, so memory holds one row of counts at a time rather than an index array per
+    replicate (260k test rows times 1000 replicates would take 2 GB).
+    """
+    rng = np.random.default_rng(seed)
+    n = len(values)
+    counts = (np.bincount(rng.integers(0, n, n), minlength=n) for _ in range(n_boot))
+    return np.stack([weights @ values / n for weights in counts])
+
+
+def percentile_interval(
+    replicates: np.ndarray, ci: float = 0.95
+) -> tuple[np.ndarray, np.ndarray]:
+    """Lower and upper percentile ends per column, NaN replicates ignored (a ratio whose
+    denominator a resampling left at zero)."""
+    alpha = (1.0 - ci) / 2.0
+    lower, upper = np.nanquantile(replicates, [alpha, 1.0 - alpha], axis=0)
+    return lower, upper

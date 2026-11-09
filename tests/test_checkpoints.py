@@ -49,3 +49,15 @@ def test_the_hash_follows_the_science_and_not_the_machine() -> None:
     assert config_hash(base) == config_hash(card)
     assert config_hash(base) != config_hash(hotter)
     assert config_hash(teacher) != config_hash(slower)
+
+
+def test_a_copied_run_directory_finds_its_checkpoint(tmp_path: Path) -> None:
+    written_in = "/data/elsewhere/run"
+    ckpt = f"{written_in}/checkpoints/e.ckpt"
+    manifest = Manifest("teacher", 1, 5, ckpt, written_in, "t", "a", 4)
+    copied = tmp_path / "run"
+    (copied / "checkpoints").mkdir(parents=True)
+    (copied / "checkpoints" / "e.ckpt").touch()
+    write_manifest(manifest, copied)
+
+    assert checkpoint_of(copied) == str(copied / "checkpoints" / "e.ckpt")

@@ -1,0 +1,21 @@
+# https://hydra.cc/docs/configure_hydra/intro/
+
+defaults:
+  - override hydra_logging: colorlog
+  - override job_logging: colorlog
+
+# The run directory is the study's own address, not a timestamp: one directory per
+# (dataset, teacher, regime, stage, fold, hyperparameter point). A multirun point lands where
+# the single run of that point would, since the sweep directory drops the hyperparameter tag
+# and the subdirectory puts it back.
+run:
+  dir: ${paths.log_dir}/${task_name}/${run_dir}
+sweep:
+  dir: ${paths.log_dir}/${task_name}/${run_dir_parent}
+  subdir: ${hp_tag}
+
+job_logging:
+  handlers:
+    file:
+      # Incorporates fix from https://github.com/facebookresearch/hydra/pull/2242
+      filename: ${hydra.runtime.output_dir}/${task_name}.log

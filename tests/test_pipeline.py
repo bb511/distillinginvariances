@@ -8,6 +8,7 @@ from omegaconf import DictConfig
 from src.cache import cache_teacher
 from src.eval import evaluate
 from src.train import train
+from src.utils.samples import read_samples
 from src.vocabulary import PROVENANCE_COLUMNS, RESULT_COLUMNS
 from tests.conftest import compose_root, needs_record, point_into
 from tests.test_train import one_batch
@@ -68,24 +69,55 @@ def test_the_stages_chain_into_two_result_rows_per_checkpoint(
         )
     table = tmp_path / "results.csv"
     manifest = tmp_path / "kd_hint" / "checkpoint_manifest.json"
+    student = (
+        f"fold={fold}",
+        "algorithm.temperature=2",
+        f"checkpoint_manifest_path={manifest}",
+        "batch_size_eval=256",
+    )
 
     evaluate(
         _compose(
             "eval.yaml",
             tmp_path,
             "kd_hint",
-            f"fold={fold}",
-            "algorithm.temperature=2",
-            f"checkpoint_manifest_path={manifest}",
+            *student,
             f"results.path={table}",
             "probe.n_draws=2",
-            "batch_size_eval=256",
         )
     )
-    with table.open(newline="") as handle:
-        header, *rows = list(csv.reader(handle))
+    evaluate(
+        _compose(
+            "eval.yaml",
+            tmp_path,
+            "kd_hint",
+            *student,
+            f"results.path={tmp_path / 'transformed.csv'}",
+            "eval_data=transformed",
+            "eval_splits=[test]",
+            f"data.transformed_dir={tmp_path / 'transformed'}",
+        )
+    )
+    header, rows = _table(table)
+    _, transformed = _table(tmp_path / "transformed.csv")
+    arrays, meta = read_samples(
+        tmp_path / "kd_hint" / "samples" / "canonical_test_translation_shiftall.npz"
+    )
 
     assert header == list(RESULT_COLUMNS + PROVENANCE_COLUMNS)
-    assert [row[header.index("eval_split")] for row in rows] == ["fold", "test"]
-    assert {row[header.index("method")] for row in rows} == {"hint"}
-    assert {row[header.index("fold")] for row in rows} == {exported}
+    assert [row["eval_split"] for row in rows] == ["fold", "test"]
+    assert {row["method"] for row in rows} == {"hint"}
+    assert {row["fold"] for row in rows} == {exported}
+    assert {row["probe_group"] for row in rows} == {"translation"}
+    assert [(r["regime"], r["eval_data"]) for r in transformed] == [
+        ("canonical", "transformed")
+    ]
+    assert arrays["student_g"].shape == (10_000, 10)
+    assert set(arrays) >= {"teacher_g", "mag_shift_row", "mag_shift_col", "targets"}
+    assert (meta["eval_split"], meta["probe_tag"]) == ("test", "translation_shiftall")
+
+
+def _table(path: Path) -> tuple[list[str], list[dict[str, str]]]:
+    with path.open(newline="") as handle:
+        header, *rows = list(csv.reader(handle))
+    return header, [dict(zip(header, row)) for row in rows]

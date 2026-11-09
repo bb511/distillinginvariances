@@ -1,0 +1,20 @@
+# The LLoCa jets teachers (arXiv:2505.20280), one class for every frames type. The experiment
+# sets frames and the architecture of the sibling's run it imports (jet_tagging_gdl,
+# lloca_<frames>/nconst50/baseline), whose checkpoints src/import_teacher.py loads unchanged.
+_target_: src.algorithms.components.lloca.LLoCaClassifier
+# lorentz, z, so2 or so3: the group the frames co-transform with.
+frames: z
+num_blocks: 8
+num_heads: 8
+attn_scalars: 8
+attn_vectors: 2
+mlp_factor: 2
+dropout: 0.0
+framesnet_hidden: 32
+# 0 adds no dropout layer to the frames-net, as the sibling's checkpoints expect.
+framesnet_dropout: 0.0
+# The references' 5 MeV, in units.
+mass_reg: 2.5e-4
+# GeV per unit of everything the package sees.
+units: 20.0
+output_dim: ${num_classes}

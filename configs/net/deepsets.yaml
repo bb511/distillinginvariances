@@ -1,11 +1,13 @@
-# The jets teacher: a permutation-invariant Deep Sets tagger on [pt, etarel, phirel].
-_target_: src.algorithms.components.deepsets.DeepSetsInvariant
+# The jets teacher: a permutation-invariant Deep Sets tagger on [pt, etarel, phirel], at the
+# architecture of the sibling's 50-constituent row (jet_tagging_gdl, deepsets/nconst50/baseline),
+# whose checkpoints src/import_teacher.py loads unchanged.
+_target_: src.algorithms.components.deepsets.DeepSetsNet
 in_dim: 3
-phi_layers: [32, 32, 32]
-rho_layers: [32]
+# The last width is that of the pooled vector, which is also the hint.
+phi_layers: [64, 64, 32]
+rho_layers: [64, 32]
 output_dim: ${num_classes}
 activation: relu
-aggregation: mean
+# Over the real constituents only; padded slots are all-zero rows.
+aggregation: sum
 dropout: 0.0
-# The hint is the aggregated phi output at this depth, 32-d here.
-hint_depth: 3

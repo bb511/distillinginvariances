@@ -37,10 +37,11 @@ def test_batches_carry_the_full_width_and_the_test_split_is_never_folded(
     pool, test, held_out = (canonical.split(s)[0] for s in ("pool", "test", "fold"))
 
     assert (
-        x.shape == (256, 50, 16)
+        x.shape == (256, 50, 17)
         and y.shape == (256, 5)
         and torch.equal(y.sum(1), torch.ones(256))
     )
+    assert canonical.feature_names[-1] == "m2" and canonical.input_shape == (50, 17)
     assert len(canonical.split("train")[0]) + len(held_out) == len(pool) != len(test)
     canonical.set_fold(1)
     assert torch.equal(canonical.split("test")[0], test)

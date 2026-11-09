@@ -10,7 +10,7 @@ from src.algorithms.distillation import DistillationModule
 from tests.conftest import RECORD_COLUMNS
 
 ADAM = {"_target_": "torch.optim.Adam", "_partial_": True, "lr": 1e-3}
-DEEPSETS = {"_target_": "src.algorithms.components.deepsets.DeepSetsInvariant"}
+DEEPSETS = {"_target_": "src.algorithms.components.deepsets.DeepSetsNet"}
 LORENTZNET = {
     "_target_": "src.algorithms.components.lorentznet.LorentzNetGraph",
     "nconstituents": 8,
@@ -105,7 +105,7 @@ def test_one_optimiser_step_per_objective(objective: str) -> None:
 def test_the_regressor_follows_the_hint_width() -> None:
     assert isinstance(_student("hint").regressor, torch.nn.Identity)  # 32 -> 32
     wide = _student("hint", teacher_net=LORENTZNET).regressor
-    assert (wide.in_features, wide.out_features) == (32, 96)
+    assert (wide.in_features, wide.out_features) == (32, 72)
 
 
 def test_the_hint_stage_leaves_the_layers_above_the_guided_one_alone() -> None:

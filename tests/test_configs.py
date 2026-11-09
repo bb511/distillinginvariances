@@ -97,17 +97,14 @@ def test_the_stages_carry_their_own_recipes(tmp_path: Path) -> None:
     )
     assert hint.data.teacher_cache == hint.teacher_cache
     assert _wants_hint_checkpoint(kd_hint) and not _wants_hint_checkpoint(hint)
-    assert (
-        set(relational.algorithm.scheduler.scheduler)
-        == set(teacher.algorithm.scheduler.scheduler)
-        == WARMUP_COSINE_KEYS
-    )
+    assert set(relational.algorithm.scheduler.scheduler) == WARMUP_COSINE_KEYS
+    assert teacher.algorithm.scheduler.scheduler.patience == 80
     assert (relational.trainer.max_epochs, relational.data.batch_size) == (
         300,
         relational.relational_batch_size,
     )
     assert (teacher.algorithm.optimizer._target_, teacher.data.batch_size) == (
-        "torch.optim.AdamW",
+        "torch.optim.Adam",
         teacher.teacher_batch_size,
     )
     assert (
@@ -133,6 +130,8 @@ def test_the_evaluation_cache_and_debug_configs_compose(tmp_path: Path) -> None:
         list(evaluation.eval_splits) == ["fold", "test"]
         and evaluation.probe.n_draws == 10
     )
+    assert (evaluation.eval_data, evaluation.probe_subgroups) == (None, None)
+    assert evaluation.dump_samples == "cell"
     assert cache.stage == "cache" and cache.data.batch_size == cache.teacher_batch_size
     assert (
         debug.task_name,
@@ -158,8 +157,8 @@ def test_the_augmented_regime_distils_the_canonical_teacher(tmp_path: Path) -> N
     assert "/canonical/teacher/fold_1/" in kd.teacher_run_dir
     assert kd.teacher_cache.endswith("/canonical/fold_1.npz")
     assert kd.data.teacher_cache == kd.teacher_cache
-    assert "/augmented/hint/fold_1/" in kd.hint_run_dir
-    assert kd.run_dir.startswith("jets/deepsets/augmented/kd/fold_1/")
+    assert "/augmented_permutation/hint/fold_1/" in kd.hint_run_dir
+    assert kd.run_dir.startswith("jets/deepsets/augmented_permutation/kd/fold_1/")
     assert debug.teacher_cache.endswith(
         "/debug/teacher_cache/jets/deepsets/canonical/fold_1.npz"
     )

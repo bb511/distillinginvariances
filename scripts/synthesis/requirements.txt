@@ -1,0 +1,11 @@
+# The environment of scripts/synthesis/synthesise.py on a machine without the
+# project's (an NGT synthesis pod, olsyn): Python >= 3.11, which keras 3.15.1 and
+# jax 0.10.2 require, and JAX on the CPU. The co-simulation also needs Verilator
+# (>= 5.048, below which alkaid warns of miscompiled RTL) and the Vivado
+# implementation a Vivado with the part's licence, neither of them from PyPI.
+#   python3.11 -m venv <venv> && <venv>/bin/pip install -r scripts/synthesis/requirements.txt
+alkaid==0.8.1
+hgq2==0.2.0
+keras==3.15.1
+jax==0.10.2
+numpy>=2.0,<2.5

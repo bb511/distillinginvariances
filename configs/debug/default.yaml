@@ -8,7 +8,7 @@ task_name: "debug" # keeps these logs out of logs/train/
 train_task: debug
 
 # A debug teacher must not overwrite the cache the real runs read.
-teacher_cache: ${paths.log_dir}/${task_name}/teacher_cache/${data.dataset}/${teacher}/${teacher_regime}/${run_label}.npz
+teacher_cache: ${paths.log_dir}/${task_name}/teacher_cache/${data.dataset}/${teacher}/${teacher_regime_tag}/${run_label}.npz
 
 # With these off, Lightning's own checkpoint callback writes the last epoch into the run
 # directory, so the manifest still names a loadable checkpoint, monitored by nothing.

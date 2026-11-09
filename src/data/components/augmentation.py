@@ -14,7 +14,9 @@ ordered [E, px, py, pz] and the beam is the z axis.
 A batch must contain px, py, pz and e, bare or with the record's ``j1_`` prefix.
 Whichever of pt, eta, phi, etarel, phirel, deltaR and ptrel it has are rewritten, and
 erel, etarot, phirot, costheta and costhetarel are left as found. Therefore, a feature
-list holding those would have stale values. Padded constituents are all-zero rows: the
+list holding those would have stale values. The squared mass `MASS_COLUMN` is left as
+found too, which is exact, since every four-vector transform preserves it; a permutation
+moves it with its constituent's row. Padded constituents are all-zero rows: the
 transform does not apply to these.
 
 Of the rewritten columns, etarel, phirel, deltaR and ptrel are measured from the jet
@@ -32,6 +34,11 @@ Transform = Callable[[torch.Tensor], torch.Tensor]
 
 # The columns measured from the jet axis.
 AXIS_COLUMNS = ("etarel", "phirel", "deltaR", "ptrel")
+# The squared mass of each constituent in GeV^2, unscaled, appended by
+# `append_mass_column`.
+MASS_COLUMN = "m2"
+# Jets per chunk of the float64 mass computation, which bounds its memory.
+MASS_CHUNK = 65536
 
 
 def compute_pt(px: torch.Tensor, py: torch.Tensor) -> torch.Tensor:
@@ -126,6 +133,32 @@ def _sample_boosts(
     )
 
     return boosts
+
+
+def sample_z_matrices(
+    nbr_rot: int, eta_max: float, device: torch.device | None = None
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Draw *nbr_rot* rotations about the beam composed with boosts along it, shape
+    (nbr_rot, 4, 4) on [E, px, py, pz], and their parameters.
+
+    The angle is uniform on [0, 2 pi), as in `sample_so2_rot_matrices`, and the rapidity
+    uniform on [-eta_max, eta_max], with the sign convention of `_sample_boosts`. The
+    two factors commute, so each matrix is either product.
+
+    :return: the matrices and the draws, shape (nbr_rot, 2): angle, then rapidity.
+    """
+    thetas = torch.rand(max(nbr_rot, 0), device=device) * (2.0 * math.pi)
+    xi = (torch.rand(max(nbr_rot, 0), device=device) * 2.0 - 1.0) * eta_max
+    cos, sin = torch.cos(thetas), torch.sin(thetas)
+    ch, sh = torch.cosh(xi), torch.sinh(xi)
+    zero = torch.zeros_like(thetas)
+    rows = [
+        [ch, zero, zero, -sh],
+        [zero, cos, -sin, zero],
+        [zero, sin, cos, zero],
+        [-sh, zero, zero, ch],
+    ]
+    return _matrices(rows), torch.stack([thetas, xi], dim=-1)
 
 
 def _read_four_momenta(
@@ -228,6 +261,30 @@ def rebase_on_kept_axis(
     return _write(x, feature_names, norm_scales, kept, active)
 
 
+def append_mass_column(
+    x: torch.Tensor,
+    feature_names: Sequence[str],
+    norm_scales: dict[str, float] | None = None,
+) -> torch.Tensor:
+    """Return *x* with `MASS_COLUMN` appended: E^2 - |p|^2 of each constituent, GeV^2.
+
+    It is computed in float64 from the de-normalised stored components and appended
+    once, as a split is loaded, before any transform. About half the constituents are
+    massless, and their E^2 - |p|^2 recomputed in float32 from a transformed row is
+    rounding, O(1e-7) E^2, that changes with the transform; the stored value travels
+    with its constituent unchanged. Padded rows get zero.
+
+    :param x: (jets, constituents, features), holding px, py, pz and e.
+    :return: (jets, constituents, features + 1), in the dtype of *x*.
+    """
+    masses = []
+    for part in x.split(MASS_CHUNK):
+        p4, _ = _read_four_momenta(part.double(), feature_names, norm_scales)
+        e, p = p4[..., 0], p4[..., 1:]
+        masses.append((e**2 - (p**2).sum(dim=-1)).to(x.dtype))
+    return torch.cat([x, torch.cat(masses).unsqueeze(-1)], dim=-1)
+
+
 def apply_random_so2(
     x: torch.Tensor,
     feature_names: Sequence[str],
@@ -273,6 +330,18 @@ def apply_random_lorentz(
     """
     boosts = _sample_boosts(x.shape[0], eta_max, isotropic, x.device)
     return _apply(x, boosts, feature_names, norm_scales)[0], boosts
+
+
+def apply_random_z(
+    x: torch.Tensor,
+    feature_names: Sequence[str],
+    eta_max: float = 1.0,
+    norm_scales: dict[str, float] | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Rotate every jet about the beam and boost it along the beam, by its own angle and
+    rapidity; return the batch and the draws, shape (jets, 2): angle, rapidity."""
+    mats, draws = sample_z_matrices(x.shape[0], eta_max, x.device)
+    return _apply(x, mats, feature_names, norm_scales)[0], draws
 
 
 def translate(x: torch.Tensor, shifts: torch.Tensor) -> torch.Tensor:
@@ -366,8 +435,9 @@ def apply_group(
     :param group: one of `src.vocabulary.GROUPS`.
     :param feature_names: the columns of *x*, needed by the four-vector groups alone.
     :return: the transformed batch and what was drawn: the boosts (jets, 4, 4) of
-        ``lorentz`` and ``lorentz_iso``, the matrices (jets, 3, 3) of ``so2`` and
-        ``so3``, the permutations (jets, constituents) or the shifts (images, 2).
+        ``lorentz`` and ``lorentz_iso``, the angles (jets,) of ``so2``, the matrices
+        (jets, 3, 3) of ``so3``, the angles and rapidities (jets, 2) of ``z``, the
+        permutations (jets, constituents) or the shifts (images, 2).
     """
     if group == "translation":
         return apply_translation(x, max_shift)
@@ -391,6 +461,8 @@ def _apply_momentum_group(
     if group in ("lorentz", "lorentz_iso"):
         isotropic = group == "lorentz_iso"
         return apply_random_lorentz(x, names, eta_max, norm_scales, isotropic)
+    if group == "z":
+        return apply_random_z(x, names, eta_max, norm_scales)
     raise ValueError(
         f"Transformation scheme must be one of {list(GROUPS)}, got {group!r}..."
     )

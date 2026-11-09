@@ -1,7 +1,7 @@
 # @package _global_
 
-# Evaluate one trained checkpoint: the fold split, then the test split at the temperature fitted
-# on the fold, and append the two rows to the results table.
+# Evaluate one trained checkpoint: the fold split, then the test split at the temperatures fitted
+# on the fold, under every probe; append one row per (split, probe) to the results table.
 defaults:
   - _self_
   - study: default
@@ -37,19 +37,33 @@ run_stage: "eval"
 checkpoint_manifest_path: ${paths.log_dir}/${train_task}/${run_dir}/checkpoint_manifest.json
 ckpt_path: null
 
-# The fold's validation half, on which the temperature is fitted, then the untouched test split.
+# The fold's validation half, on which both temperatures are fitted, then the untouched test
+# split.
 eval_splits: [fold, test]
 
-# The invariance probe: n_draws independent transforms per sample, the first of which also
-# serves the fidelity under the group action. lorentz_eta_max, max_shift and n_swaps are the
-# group's knobs, kept here rather than read from data.transform_kwargs so the probe can be
-# widened without retraining.
+# The rows evaluated, validation and test alike: null for the run's own (the transformed
+# rows for an augmented run), or canonical / transformed to read another regime's.
+eval_data: null
+
+# The invariance probes: n_draws independent transforms per sample, the first of which also
+# goes through the teacher (the _g and tinv columns). lorentz_eta_max, max_shift and n_swaps
+# are the groups' knobs, kept here rather than read from data.transform_kwargs so a probe can
+# be widened without retraining. Each probe draws under a seed fixed by (seed, split, probe,
+# batch), so the draws also depend on batch_size_eval and on the device type.
 probe:
   n_draws: 10
   lorentz_eta_max: 1.0
   max_shift: null
   # Transpositions composed into each permutation of the slots; null draws a uniform one.
   n_swaps: null
+
+# The groups probed after the cell's own (data.group); null takes the dataset's from
+# src/vocabulary.py (PROBE_SUBGROUPS), [] probes the cell's group alone.
+probe_subgroups: null
+
+# Per-sample arrays (first draw: student and teacher logits at x and g.x, labels, the draw's
+# magnitudes) written to <output_dir>/samples/: cell for the cell's own probe, all, or none.
+dump_samples: cell
 
 # The long-format results table; debug/default.yaml sets the path to null to keep a throwaway
 # evaluation out of results/.

@@ -1,0 +1,28 @@
+# @package _global_
+
+# The Optuna sweeper every search config inherits: the sibling's protocol (TPE, seed 1234, 20
+# start-up trials), maximising the main run's best validation accuracy.
+defaults:
+  - override /hydra/sweeper: optuna
+  - override /hydra/sweeper/sampler: tpe
+  - override /callbacks: search
+  # A trial leaves only its study row.
+  - override /logger: none
+
+optimized_metric: val/acc_best
+
+hydra:
+  mode: MULTIRUN
+  # One directory per trial, numbered: the run-directory convention would put every trial of a
+  # stage into the directory of its hp_tag, where the second would meet the first's manifest.
+  # The submitters replace the timestamp by one per driver.
+  sweep:
+    dir: ${paths.log_dir}/searches/multiruns/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.num}
+  sweeper:
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+    n_jobs: 1
+    direction: maximize
+    sampler:
+      seed: 1234
+      n_startup_trials: 20

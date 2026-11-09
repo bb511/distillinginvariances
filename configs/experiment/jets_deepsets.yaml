@@ -18,8 +18,18 @@ data:
   group: permutation
   batch_size: 1024
 
-teacher_lr: 3.2e-3
-teacher_batch_size: 128
+# The recipe of the sibling's 50-constituent row, read from its checkpoints and its runs'
+# .hydra/config.yaml, so that hp_tag and config_hash name the teacher src/import_teacher.py
+# brings in. The sibling also clipped gradients at 1.0, trained in 16-mixed precision and
+# stopped early after 100 epochs without improvement; those trainer and callback settings
+# stay this study's own.
+teacher_lr: 0.0038020938205913656
+teacher_batch_size: 2048
+teacher_optimizer:
+  weight_decay: 1.0e-7
+teacher_scheduler:
+  scheduler:
+    patience: 80
 hint_lr: 1.0e-3
 relational_batch_size: 1024
 

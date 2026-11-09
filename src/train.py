@@ -6,6 +6,7 @@ from typing import Any
 import hydra
 import lightning as L
 import rootutils
+import torch
 from lightning import Callback, LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.callbacks import LearningRateMonitor
 from lightning.pytorch.loggers import Logger, MLFlowLogger
@@ -20,9 +21,11 @@ from src.utils.omegaconf import fold_value, register_resolvers
 # ${fold_label:} and ${regime_of_teacher:}.
 register_resolvers()
 
+from src.algorithms.utils.budget import linear_macs
 from src.utils import (
     RankedLogger,
     extras,
+    get_metric_value,
     instantiate_callbacks,
     instantiate_loggers,
     log_hyperparameters,
@@ -40,7 +43,7 @@ from src.utils.checkpoints import (
 log = RankedLogger(__name__, rank_zero_only=True)
 
 # The stages fitted on the labels alone; every other stage reads the cell's teacher checkpoint.
-STAGES_WITHOUT_TEACHER = ("teacher", "baseline")
+STAGES_WITHOUT_TEACHER = ("teacher", "baseline", "hgq")
 
 
 def _check_fold(cfg: DictConfig) -> None:
@@ -49,6 +52,18 @@ def _check_fold(cfg: DictConfig) -> None:
     n_folds, fold = int(cfg.data.n_folds), cfg.get("fold")
     if fold is not None and not 1 <= int(fold) <= n_folds:
         raise ValueError(f"fold={fold} is outside 1..{n_folds} (data.n_folds).")
+
+
+def _over_budget(cfg: DictConfig) -> bool:
+    """Whether the trained network exceeds ``max_macs``, which only the student searches
+    set; building the network alone needs no data."""
+    if cfg.get("max_macs") is None:
+        return False
+    macs = linear_macs(hydra.utils.instantiate(cfg.algorithm.net))
+    if macs <= cfg.max_macs:
+        return False
+    log.info(f"{macs} multiply-accumulates exceed max_macs={cfg.max_macs}: scored 0.")
+    return True
 
 
 def _wants_hint_checkpoint(cfg: DictConfig) -> bool:
@@ -158,9 +173,14 @@ def train(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
     """Fit the fold ``fold`` of the stage ``stage`` and write its manifest.
 
     :return: the trainer's callback metrics, empty when the run was already done, and
-        the objects the run was built from.
+        the objects the run was built from; ``optimized_metric`` alone, at 0, for a
+        network over ``max_macs``.
     """
     _check_fold(cfg)
+    if _over_budget(cfg):
+        # The pinned sweeper can neither prune nor skip a trial, and a job that raises or
+        # returns None aborts the whole sweep, so an infeasible point scores the floor.
+        return {cfg.get("optimized_metric"): torch.tensor(0.0)}, {}
     digest = config_hash(cfg)
     if _already_done(cfg, digest):
         return {}, {}
@@ -184,13 +204,18 @@ def train(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
 
 
 @hydra.main(version_base="1.3", config_path="../configs", config_name="train.yaml")
-def main(cfg: DictConfig) -> None:
+def main(cfg: DictConfig) -> float | None:
+    """Train, and return ``optimized_metric`` for Optuna to maximise, None outside a
+    search."""
     extras(cfg)
-    train(cfg)
+    metric_dict, object_dict = train(cfg)
+    value = get_metric_value(metric_dict, cfg.get("optimized_metric"))
     # A multirun fits every point in one process, and the trainer, the module and the datamodule
     # reference one another, so a finished point's tensors are cyclic garbage that only a
     # collection frees: CPython's own trigger counts allocations, not bytes.
+    del metric_dict, object_dict
     gc.collect()
+    return value
 
 
 if __name__ == "__main__":

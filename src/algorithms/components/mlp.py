@@ -13,6 +13,10 @@ class MLPStudent(FeatureNet):
         ``pixels`` for MNIST.
     :param required_features: the columns the flattening assumes, set per dataset
         because the same class serves both.
+    :param depth: keep only the first ``depth`` widths of ``hidden``, None all of them;
+        the student search draws a depth and a fixed set of seven widths.
+    :param width_factor: multiplies every hidden width, so that the double-width control
+        follows whatever stack the search selected.
     """
 
     def __init__(
@@ -21,14 +25,16 @@ class MLPStudent(FeatureNet):
         hidden: tuple[int, ...] = (64, 32, 32, 32),
         output_dim: int = 5,
         required_features: list[str] | None = None,
+        depth: int | None = None,
+        width_factor: int = 1,
     ) -> None:
         super().__init__()
         self.required_features = list(required_features) if required_features else None
-        sizes = [in_dim, *hidden]
+        sizes = [in_dim, *(width * width_factor for width in hidden[:depth])]
         self.hidden = nn.ModuleList(
-            [nn.Linear(sizes[i], sizes[i + 1]) for i in range(len(hidden))]
+            [nn.Linear(sizes[i], sizes[i + 1]) for i in range(len(sizes) - 1)]
         )
-        self.output = nn.Linear(hidden[-1], output_dim)
+        self.output = nn.Linear(sizes[-1], output_dim)
 
     def forward_with_hidden(
         self, x: torch.Tensor

@@ -5,7 +5,7 @@ import hashlib
 
 from omegaconf import OmegaConf
 
-from src.vocabulary import MAIN_FOLD, TEACHER_REGIME
+from src.vocabulary import MAIN_FOLD, TEACHER_REGIME, regime_tag
 
 
 def short_hash(value: str, length: int = 12) -> str:
@@ -49,3 +49,4 @@ def register_resolvers() -> None:
     OmegaConf.register_new_resolver(
         "regime_of_teacher", regime_of_teacher, replace=True
     )
+    OmegaConf.register_new_resolver("regime_tag", regime_tag, replace=True)

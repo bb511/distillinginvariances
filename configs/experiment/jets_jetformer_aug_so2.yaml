@@ -1,0 +1,57 @@
+# @package _global_
+
+# The JetFormer control teacher on [pt, eta, phi] trained with rotations about the beam drawn
+# afresh per batch, the learned-invariance teacher, imported from the sibling; the z cell's
+# group and an MLP student on [pt, eta, phi] until its cells are settled.
+defaults:
+  - override /data: jets
+  - override /net@teacher_net: jetformer
+  - override /net@student_net: mlp_jets_abs
+  - override /trainer: gpu
+
+teacher: jetformer_aug_so2
+num_classes: 5
+input_shape: [50, 16]
+
+tags: ["jets", "jetformer_aug_so2", "z"]
+experiment_name: distilling_symmetries_jets_jetformer_aug_so2
+
+# data.batch_size, hint_lr and relational_batch_size are the students' fixed values, Distillation
+# I's to change.
+data:
+  group: z
+  batch_size: 1024
+
+# The architecture and recipe of the sibling's 50-constituent row (jet_tagging_gdl,
+# pt_eta_phi/jetformer/nconst50/aug_so2), read from its checkpoints and its runs'
+# .hydra/config.yaml, so that hp_tag and config_hash name the teacher src/import_teacher.py
+# brings in. The sibling augmented every training batch by one SO(2) draw per jet (angle
+# uniform on [0, 2 pi)), and trained in 16-mixed precision, clipped gradients at 1.0 and stopped
+# early after 100 epochs without improvement; those settings stay this study's own.
+teacher_net:
+  embed_dim: 96
+  num_heads: 4
+  num_transformers: 3
+teacher_lr: 0.003922130472399923
+teacher_batch_size: 2048
+teacher_optimizer:
+  _target_: torch.optim.AdamW
+  weight_decay: 0.05
+# A node of its own, interpolated whole: written out under teacher_scheduler it would merge
+# into the plateau scheduler of the study config. Stepped per batch; total_steps, read from the
+# checkpoints, is 200 epochs of 242 batches of 2048 jets.
+jetformer_teacher_scheduler:
+  scheduler:
+    _target_: torch.optim.lr_scheduler.OneCycleLR
+    _partial_: true
+    max_lr: ${teacher_lr}
+    total_steps: 48400
+    pct_start: 0.2
+  interval: step
+  frequency: 1
+teacher_scheduler: ${jetformer_teacher_scheduler}
+hint_lr: 1.0e-3
+relational_batch_size: 1024
+
+extras:
+  matmul_precision: highest

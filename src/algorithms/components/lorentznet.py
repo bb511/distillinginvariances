@@ -1,22 +1,30 @@
-"""LorentzNet with beam nodes, the jets teacher of arXiv:2201.08187 (Gong et al., 2022).
+"""LorentzNet, the Lorentz-invariant jets teacher of arXiv:2201.08187 (Gong et al.).
 
-A jet is a fully connected graph over its constituents and the two beam nodes, self-
-loops excluded. Each node carries its four-momentum :math:`(E, p_x, p_y, p_z)` in GeV
-and two Lorentz scalars, the signed log of its mass in the channel that separates a beam
-from a constituent.
+A port of ``LorentzNetGraph`` of the sibling repository, jet_tagging_gdl
+(src/algorithms/lorentznet.py): the submodules keep its names and layer order, so its
+checkpoints load with ``strict=True`` once the ``denorm_scales`` its Lightning module
+holds is renamed into the network.
+
+A jet is a fully connected graph over its constituents, self-loops excluded, with no
+beam nodes. Each node carries its four-momentum :math:`(E, p_x, p_y, p_z)` and one
+Lorentz scalar, the signed log of its squared mass. The sibling computes that mass from
+the four-momentum the network is handed; this study reads it from the datamodule's
+`~src.data.components.augmentation.MASS_COLUMN` instead (``node_scalar="stored"``), so a
+transformed jet keeps the node scalars of its canonical row.
 
 The metric is :math:`(+, -, -, -)` and the momenta are in GeV throughout: the edge
 invariants are dimensionful and the signed log compresses them assuming that scale, so a
 batch reaches `forward` through `prepare`, which de-normalises and reorders it.
 """
 
-import math
-
 import torch
 from torch import nn
 
 from src.algorithms.components import FeatureNet
-from src.data.components.augmentation import get_norm_scale
+from src.data.components.augmentation import MASS_COLUMN, get_norm_scale
+
+FOUR_MOMENTUM = ["px", "py", "pz", "e"]
+NODE_SCALARS = ("computed", "stored")
 
 
 def normsq4(p: torch.Tensor) -> torch.Tensor:
@@ -41,6 +49,31 @@ def psi(p: torch.Tensor) -> torch.Tensor:
     return torch.sign(p) * torch.log(p.abs() + 1)
 
 
+def _message_mlp(n_hidden: int) -> nn.Sequential:
+    return nn.Sequential(
+        nn.Linear(2 * n_hidden + 2, n_hidden, bias=False),
+        nn.BatchNorm1d(n_hidden),
+        nn.ReLU(),
+        nn.Linear(n_hidden, n_hidden),
+        nn.ReLU(),
+    )
+
+
+def _scalar_mlp(n_hidden: int) -> nn.Sequential:
+    return nn.Sequential(
+        nn.Linear(2 * n_hidden + 1, n_hidden),
+        nn.BatchNorm1d(n_hidden),
+        nn.ReLU(),
+        nn.Linear(n_hidden, n_hidden),
+    )
+
+
+def _coordinate_mlp(n_hidden: int) -> nn.Sequential:
+    last = nn.Linear(n_hidden, 1, bias=False)
+    nn.init.xavier_uniform_(last.weight, gain=0.001)
+    return nn.Sequential(nn.Linear(n_hidden, n_hidden), nn.ReLU(), last)
+
+
 class LGEB(nn.Module):
     """Lorentz Group Equivariant Block: one round of message passing over a flat node
     set.
@@ -48,41 +81,20 @@ class LGEB(nn.Module):
     Two edge attributes enter the messages, the norm of :math:`x_i - x_j` and the
     product :math:`x_i \\cdot x_j`.
 
-    :param n_scalar: node scalars per node, 2 with the beams and 1 without.
+    :param n_hidden: width of the node scalars and of the messages.
     :param c_weight: step size of the coordinate update.
     :param last_layer: drop the coordinate update, whose result no later block reads.
     """
 
     def __init__(
-        self,
-        hidden_dim: int,
-        n_scalar: int,
-        c_weight: float = 1.0,
-        last_layer: bool = False,
+        self, n_hidden: int, c_weight: float = 1.0, last_layer: bool = False
     ) -> None:
         super().__init__()
         self.c_weight = c_weight
-        self.phi_e = nn.Sequential(
-            nn.Linear(2 * hidden_dim + 2, hidden_dim, bias=False),
-            nn.BatchNorm1d(hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-        )
-        self.phi_m = nn.Sequential(nn.Linear(hidden_dim, 1), nn.Sigmoid())
-        self.phi_h = nn.Sequential(
-            nn.Linear(2 * hidden_dim + n_scalar, hidden_dim),
-            nn.BatchNorm1d(hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-        )
-        self.phi_x = None
-        if not last_layer:
-            last = nn.Linear(hidden_dim, 1, bias=False)
-            nn.init.xavier_uniform_(last.weight, gain=0.001)
-            self.phi_x = nn.Sequential(
-                nn.Linear(hidden_dim, hidden_dim), nn.ReLU(), last
-            )
+        self.phi_e = _message_mlp(n_hidden)
+        self.phi_m = nn.Sequential(nn.Linear(n_hidden, 1), nn.Sigmoid())
+        self.phi_h = _scalar_mlp(n_hidden)
+        self.phi_x = None if last_layer else _coordinate_mlp(n_hidden)
 
     def forward(
         self,
@@ -91,22 +103,20 @@ class LGEB(nn.Module):
         src: torch.Tensor,
         dst: torch.Tensor,
         node_attr: torch.Tensor,
-        node_mask: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Return the updated ``(h, x)``.
 
-        :param h: node scalars, shape (nodes, hidden_dim).
+        :param h: node scalars, shape (nodes, n_hidden).
         :param x: node four-momenta, shape (nodes, 4).
         :param src: source node of each edge, shape (edges,).
         :param dst: destination node of each edge, shape (edges,).
-        :param node_attr: the Lorentz scalars, shape (nodes, n_scalar).
-        :param node_mask: true on a real node, shape (nodes,).
+        :param node_attr: the Lorentz scalar of each node, shape (nodes, 1).
         """
         x_diff = x[src] - x[dst]
         m = self._messages(h, x, x_diff, src, dst)
         if self.phi_x is not None:
             x = self._update_coordinates(x, x_diff, m, src)
-        return self._update_scalars(h, m, node_attr, src, node_mask), x
+        return self._update_scalars(h, m, node_attr, src), x
 
     def _messages(
         self,
@@ -116,7 +126,7 @@ class LGEB(nn.Module):
         src: torch.Tensor,
         dst: torch.Tensor,
     ) -> torch.Tensor:
-        """The (edges, hidden_dim) messages, each gated by its own learned weight."""
+        """The (edges, n_hidden) messages, each gated by its own learned weight."""
         norms = psi(normsq4(x_diff)).unsqueeze(1)
         dots = psi(dotsq4(x[src], x[dst])).unsqueeze(1)
         m = self.phi_e(torch.cat([h[src], h[dst], norms, dots], dim=1))
@@ -128,17 +138,15 @@ class LGEB(nn.Module):
         m: torch.Tensor,
         node_attr: torch.Tensor,
         src: torch.Tensor,
-        node_mask: torch.Tensor,
     ) -> torch.Tensor:
-        """Add to each real node the response to its summed incoming messages.
+        """Add to each node the response to its summed incoming messages.
 
-        The padded nodes are left out, and so out of the batch statistics of phi_h,
-        which is what keeps the logits independent of how many slots the padding fills.
+        Padded nodes receive no message but are updated too, as in the sibling; in
+        training they enter the batch statistics of phi_h, in evaluation they reach
+        neither a real node nor the pool.
         """
         agg = h.new_zeros(h.shape[0], m.shape[1]).index_add_(0, src, m)
-        update = h.new_zeros(h.shape)
-        update[node_mask] = self.phi_h(torch.cat([h, agg, node_attr], dim=1)[node_mask])
-        return h + update
+        return h + self.phi_h(torch.cat([h, agg, node_attr], dim=1))
 
     def _update_coordinates(
         self, x: torch.Tensor, x_diff: torch.Tensor, m: torch.Tensor, src: torch.Tensor
@@ -159,57 +167,72 @@ class LGEB(nn.Module):
         return x + self.c_weight * step / count.clamp(min=1)
 
 
+def _blocks(n_hidden: int, n_layers: int, c_weight: float) -> nn.ModuleList:
+    return nn.ModuleList(
+        [
+            LGEB(n_hidden, c_weight, last_layer=(i == n_layers - 1))
+            for i in range(n_layers)
+        ]
+    )
+
+
+def _validated(node_scalar: str) -> str:
+    if node_scalar not in NODE_SCALARS:
+        raise ValueError(
+            f"node_scalar must be one of {NODE_SCALARS}, got {node_scalar!r}."
+        )
+    return node_scalar
+
+
+def _decoder(n_hidden: int, output_dim: int, dropout: float) -> nn.Sequential:
+    return nn.Sequential(
+        nn.Linear(n_hidden, n_hidden),
+        nn.ReLU(),
+        nn.Dropout(dropout),
+        nn.Linear(n_hidden, output_dim),
+    )
+
+
 class LorentzNetGraph(FeatureNet):
     """LorentzNet over a batch of jets held as a fixed-width four-momentum tensor.
 
-    :param hidden_dim: width of the node scalars inside the blocks, and of the hint.
-    :param c_weight: step size of the coordinate updates.
-    :param add_beams: prepend the two beam nodes of the reference implementation.
-    :param beam_mass: mass of a beam node, in GeV.
-    :param nconstituents: constituent slots per jet, the second axis of a batch.
-    """
+    The hint is the pooled node scalars the decoder reads, of width ``n_hidden``.
 
-    required_features = ["px", "py", "pz", "e"]
+    :param n_hidden: width of the node scalars inside the blocks, and of the hint.
+    :param c_weight: step size of the coordinate updates.
+    :param dropout: inside the decoder, after its hidden layer.
+    :param nconstituents: constituent slots per jet, the second axis of a batch.
+    :param node_scalar: ``computed``, the sibling's float32 :math:`E^2 - |p|^2` of the
+        four-momentum handed in, or ``stored``, the `MASS_COLUMN` of the batch, which a
+        transform leaves as it was. The default is the sibling's, so a checkpoint whose
+        hyperparameters predate the switch loads as it was imported; the state dict is
+        the same for both.
+    """
 
     def __init__(
         self,
-        hidden_dim: int = 96,
-        n_layers: int = 4,
+        n_hidden: int = 72,
+        n_layers: int = 6,
         output_dim: int = 5,
         c_weight: float = 1e-3,
-        dropout: float = 0.2,
-        add_beams: bool = True,
-        beam_mass: float = 1.0,
-        nconstituents: int = 32,
+        dropout: float = 0.0,
+        nconstituents: int = 50,
+        node_scalar: str = "computed",
     ) -> None:
         super().__init__()
-        self.hidden_dim = hidden_dim
-        self.hint_dim = hidden_dim
-        self.add_beams = add_beams
-        self.beam_mass = beam_mass
-        self.n_scalar = 2 if add_beams else 1
-        self.embedding = nn.Linear(self.n_scalar, hidden_dim)
-        self.blocks = nn.ModuleList(
-            [
-                LGEB(
-                    hidden_dim,
-                    self.n_scalar,
-                    c_weight,
-                    last_layer=(i == n_layers - 1),
-                )
-                for i in range(n_layers)
-            ]
-        )
-        self.decode = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, output_dim),
-        )
-        self._register_edges(nconstituents + (2 if add_beams else 0))
+        self.node_scalar = _validated(node_scalar)
+        self.n_hidden = self.hint_dim = n_hidden
+        self.embedding = nn.Linear(1, n_hidden)
+        self.blocks = _blocks(n_hidden, n_layers, c_weight)
+        self.graph_dec = _decoder(n_hidden, output_dim, dropout)
+        self._register_edges(nconstituents)
         self._scales_cached = False
         # The factors from the stored columns [px, py, pz, e] back to GeV.
         self.register_buffer("denorm_scales", torch.ones(4))
+
+    @property
+    def required_features(self) -> list[str]:
+        return FOUR_MOMENTUM + ([MASS_COLUMN] if self.node_scalar == "stored" else [])
 
     def _register_edges(self, n_nodes: int) -> None:
         """The edges of one fully connected jet, self-loops excluded."""
@@ -221,111 +244,76 @@ class LorentzNetGraph(FeatureNet):
     def prepare(
         self, x: torch.Tensor, norm_scales: dict[str, float] | None = None
     ) -> torch.Tensor:
-        """Return the batch as four-momenta in GeV, ordered [E, px, py, pz].
+        """Return the batch as four-momenta in GeV, ordered [E, px, py, pz], followed by
+        the squared mass in GeV^2 when the node scalar is stored.
 
-        :param x: (jets, constituents, 4) holding the record's columns [px, py, pz, e]
-            in the datamodule's normalisation.
+        :param x: (jets, constituents, features), the columns [px, py, pz, e] in the
+            datamodule's normalisation, then the unscaled `MASS_COLUMN` when the node
+            scalar is stored.
         :param norm_scales: the datamodule's factors back to GeV, cached on the first
-            call that supplies them; None leaves the batch unscaled.
+            call that supplies them; None keeps the cached factors.
         """
         if norm_scales is not None and not self._scales_cached:
             self._cache_scales(norm_scales)
-        return (x * self.denorm_scales.to(x.dtype))[..., [3, 0, 1, 2]]
+        pmu = (x[..., :4] * self.denorm_scales.to(x.dtype))[..., [3, 0, 1, 2]]
+        return torch.cat([pmu, x[..., 4:]], dim=-1)
 
     def _cache_scales(self, norm_scales: dict[str, float]) -> None:
-        """Store the per-column factors to GeV, in the order of `required_features`."""
-        scales = [get_norm_scale(norm_scales, name) for name in self.required_features]
+        """Store the per-column factors to GeV of [px, py, pz, e]."""
+        scales = [get_norm_scale(norm_scales, name) for name in FOUR_MOMENTUM]
         self.denorm_scales.copy_(torch.tensor(scales))
         self._scales_cached = True
 
-    def forward(
-        self, pmu: torch.Tensor, lorentz_matrix: torch.Tensor | None = None
-    ) -> torch.Tensor:
-        return self.forward_with_hint(pmu, lorentz_matrix)[0]
+    def forward(self, pmu: torch.Tensor) -> torch.Tensor:
+        return self.forward_with_hint(pmu)[0]
 
-    def forward_with_hint(
-        self, pmu: torch.Tensor, lorentz_matrix: torch.Tensor | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward_with_hint(self, pmu: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Return the class logits and the pooled node scalars, which are the hint.
 
         :param pmu: (jets, constituents, 4) four-momenta [E, px, py, pz] in GeV, padded
-            constituents as all-zero rows.
-        :param lorentz_matrix: (jets, 4, 4) on [E, px, py, pz], the transformation the
-            batch has already been through. The beams are co-transformed by it, so they
-            remain the same two physical nodes in every frame.
+            constituents as all-zero rows; (jets, constituents, 5) with the squared mass
+            in GeV^2 last when the node scalar is stored.
         """
-        x, scalars, node_mask = self._nodes(pmu, lorentz_matrix)
-        h = self._message_passing(x, scalars, node_mask)
-        pooled = self._pool(h, node_mask)
-        return self.decode(pooled), pooled
-
-    def _nodes(
-        self, pmu: torch.Tensor, lorentz_matrix: torch.Tensor | None
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Return (jets, nodes, 4) momenta, (jets, nodes, n_scalar) scalars and the
-        (jets, nodes) real-node mask, the two beams first where they are added."""
-        x = self._with_beams(pmu, lorentz_matrix) if self.add_beams else pmu
-        return x, self._scalars(x), x[..., 0] != 0.0
-
-    def _with_beams(
-        self, pmu: torch.Tensor, lorentz_matrix: torch.Tensor | None
-    ) -> torch.Tensor:
-        """Prepend the beams (sqrt(1 + m^2), 0, 0, +-1) with m the beam mass in GeV."""
-        energy = math.sqrt(1.0 + self.beam_mass**2)
-        beams = pmu.new_tensor(
-            [[[energy, 0.0, 0.0, 1.0], [energy, 0.0, 0.0, -1.0]]]
-        ).expand(pmu.shape[0], 2, 4)
-        if lorentz_matrix is not None:
-            beams = beams @ lorentz_matrix.to(pmu.dtype).transpose(-1, -2)
-        return torch.cat([beams, pmu], dim=1)
-
-    def _scalars(self, x: torch.Tensor) -> torch.Tensor:
-        """Psi of the node masses in GeV, beams in channel 1 and constituents in 0.
-
-        The channel, not the value, is what tells a block that a node is a beam. A
-        nominally massless constituent has m^2 at the float32 rounding of E^2 - |p|^2,
-        which the absolute value keeps real.
-        """
-        mass = normsq4(x).abs().sqrt()
-        if not self.add_beams:
-            return psi(mass.unsqueeze(-1))
-        scalars = x.new_zeros(*mass.shape, 2)
-        scalars[:, :2, 1] = mass[:, :2]
-        scalars[:, 2:, 0] = mass[:, 2:]
-        return psi(scalars)
-
-    def _message_passing(
-        self, x: torch.Tensor, scalars: torch.Tensor, node_mask: torch.Tensor
-    ) -> torch.Tensor:
-        """Run the blocks over the flattened (jets * nodes) axis; return the scalars."""
-        src, dst = self._batch_edges(node_mask)
-        attr, flat_mask = scalars.reshape(-1, self.n_scalar), node_mask.reshape(-1)
-        h, x = self.embedding(attr), x.reshape(-1, 4)
+        n_jets, n_slots, _ = pmu.shape
+        real = pmu[..., 0] != 0.0
+        src, dst = self._batch_edges(real)
+        scalars = self._node_scalars(pmu).reshape(n_jets * n_slots, 1)
+        h, x = self.embedding(scalars), pmu[..., :4].reshape(n_jets * n_slots, 4)
         for block in self.blocks:
-            h, x = block(h, x, src, dst, attr, flat_mask)
-        return h
+            h, x = block(h, x, src, dst, scalars)
+        pooled = self._pool(h, real)
+        return self.graph_dec(pooled), pooled
 
-    def _batch_edges(
-        self, node_mask: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Index the edges that join two real nodes, over the flattened node axis.
+    def _node_scalars(self, pmu: torch.Tensor) -> torch.Tensor:
+        """Psi of each node's squared mass in GeV^2, shape (jets, constituents).
 
-        Padded constituents are dropped to reduce the cost of the graphs.
-
-        :param node_mask: (jets, nodes) boolean, true on a real node.
-        :return: two (edges,) index tensors into the flattened jets * nodes axis.
+        A massless constituent, about half of the record's, has a computed m^2 at the
+        rounding of its components and of E^2 - |p|^2, O(1e-7) E^2 in float32, which
+        changes under any transformation; a pion's is 0.0195 GeV^2. The stored m^2 was
+        computed once, in float64, from the canonical row, and no transform changes it.
         """
-        valid = node_mask[:, self.edge_src] & node_mask[:, self.edge_dst]
+        if self.node_scalar == "stored":
+            return psi(pmu[..., 4])
+        return psi(normsq4(pmu[..., :4]))
+
+    def _batch_edges(self, real: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Index the edges that join two real constituents, over the flattened node
+        axis; padded constituents are dropped to reduce the cost of the graphs.
+
+        :param real: (jets, constituents) boolean, true on a real constituent.
+        :return: two (edges,) index tensors into the flattened jets * constituents axis.
+        """
+        valid = real[:, self.edge_src] & real[:, self.edge_dst]
         jet_idx, edge_idx = valid.nonzero(as_tuple=True)
-        offset = jet_idx * node_mask.shape[1]
+        offset = jet_idx * real.shape[1]
         return self.edge_src[edge_idx] + offset, self.edge_dst[edge_idx] + offset
 
-    def _pool(self, h: torch.Tensor, node_mask: torch.Tensor) -> torch.Tensor:
-        """Average the node scalars of each jet over its real nodes.
+    def _pool(self, h: torch.Tensor, real: torch.Tensor) -> torch.Tensor:
+        """Average the node scalars of each jet over its real constituents.
 
-        Over the real nodes rather than the slots, unlike the reference implementation,
-        so that widening the padding leaves the logits alone.
+        Over the real constituents rather than the slots, unlike the reference
+        implementation, so that widening the padding leaves the logits alone.
         """
-        counts = node_mask.sum(dim=1, keepdim=True).clamp(min=1).to(h.dtype)
-        masked = h * node_mask.reshape(-1, 1).to(h.dtype)
-        return masked.view(node_mask.shape[0], -1, self.hidden_dim).sum(dim=1) / counts
+        counts = real.sum(dim=1, keepdim=True).clamp(min=1).to(h.dtype)
+        masked = h * real.reshape(-1, 1).to(h.dtype)
+        return masked.view(real.shape[0], -1, self.n_hidden).sum(dim=1) / counts

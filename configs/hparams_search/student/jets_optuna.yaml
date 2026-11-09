@@ -1,0 +1,46 @@
+# @package _global_
+
+# The jets student search (03_student.md), one TPE study per input set: a depth of 3 to 7 over
+# seven per-layer widths of fixed names, of which the student keeps the first `depth`, under a
+# cap of 30k multiply-accumulates; an over-budget trial scores 0 and counts among the 200.
+defaults:
+  - /hparams_search/optuna
+
+max_macs: 30000
+
+width_1: 64
+width_2: 32
+width_3: 32
+width_4: 32
+width_5: 32
+width_6: 32
+width_7: 32
+
+student_net:
+  hidden:
+    - ${width_1}
+    - ${width_2}
+    - ${width_3}
+    - ${width_4}
+    - ${width_5}
+    - ${width_6}
+    - ${width_7}
+  depth: 4
+
+hydra:
+  sweeper:
+    storage: sqlite:///logs/optuna/student.db?timeout=600
+    study_name: ${search_study}_${data.regime}
+    n_trials: 200
+
+    params:
+      student_net.depth: int(interval(3, 7))
+      width_1: choice(32, 44, 64, 88, 128)
+      width_2: choice(32, 44, 64, 88, 128)
+      width_3: choice(32, 44, 64, 88, 128)
+      width_4: choice(32, 44, 64, 88, 128)
+      width_5: choice(32, 44, 64, 88, 128)
+      width_6: choice(32, 44, 64, 88, 128)
+      width_7: choice(32, 44, 64, 88, 128)
+      algorithm.optimizer.lr: tag(log, interval(1e-4, 1e-2))
+      algorithm.optimizer.weight_decay: choice(0.0, 1e-7, 1e-6, 1e-5, 1e-4)

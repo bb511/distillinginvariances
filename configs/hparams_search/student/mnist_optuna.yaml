@@ -1,0 +1,23 @@
+# @package _global_
+
+# The MNIST student search (03_student.md): one choice over the 16 stacks of depth 3 to 7 over
+# widths {32, 44, 64, 88, 128} within 30k multiply-accumulates at 784 inputs, all with a first
+# layer of 32 and a depth of at most 5 (budget.feasible_stacks; a test keeps the list equal).
+defaults:
+  - /hparams_search/optuna
+
+max_macs: 30000
+
+student_net:
+  depth: null
+
+hydra:
+  sweeper:
+    storage: sqlite:///logs/optuna/student.db?timeout=600
+    study_name: ${search_study}_${data.regime}
+    n_trials: 200
+
+    params:
+      student_net.hidden: choice([32,32,32], [32,32,44], [32,32,64], [32,32,88], [32,44,32], [32,44,44], [32,44,64], [32,64,32], [32,32,32,32], [32,32,32,44], [32,32,32,64], [32,32,44,32], [32,32,44,44], [32,44,32,32], [32,44,32,44], [32,32,32,32,32])
+      algorithm.optimizer.lr: tag(log, interval(1e-4, 1e-2))
+      algorithm.optimizer.weight_decay: choice(0.0, 1e-7, 1e-6, 1e-5, 1e-4)

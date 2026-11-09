@@ -1,0 +1,8 @@
+# The top-tagging student on the absolute angles of 100 constituents, [pt, eta, phi]. The stack
+# is a placeholder until scripts/search/studies.py writes the search's selection; at 300 inputs
+# the first layer is at most 64 wide under 30k multiply-accumulates.
+_target_: src.algorithms.components.mlp.MLPStudent
+in_dim: 300
+hidden: [64, 32, 32]
+output_dim: ${num_classes}
+required_features: [pt, eta, phi]

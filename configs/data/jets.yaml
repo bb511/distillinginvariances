@@ -34,7 +34,8 @@ transform_kwargs:
   # Transpositions per jet for the permutation group; null is one uniform permutation.
   n_swaps: null
 
-transformed_dir: ${paths.base_data_dir}/transformed
+# Per multiplicity, as the record caches: a draw stored under another key is redrawn in place.
+transformed_dir: ${paths.base_data_dir}/transformed/nconst_${.nconstituents}
 
 batch_size: 1024
 # Loader processes; they persist across epochs so their copy of the shuffler advances.

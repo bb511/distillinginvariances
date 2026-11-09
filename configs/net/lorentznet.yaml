@@ -1,13 +1,18 @@
-# The Lorentz-invariant jets teacher (arXiv:2201.08187), at the paper's widths.
+# The Lorentz-invariant jets teacher (arXiv:2201.08187), at the architecture of the sibling's
+# 50-constituent row (jet_tagging_gdl, lorentznet/nconst50/baseline), whose checkpoints
+# src/import_teacher.py loads unchanged. No beam nodes.
 _target_: src.algorithms.components.lorentznet.LorentzNetGraph
-hidden_dim: 96
-n_layers: 4
+# Width of the node scalars, and of the pooled vector that is the hint.
+n_hidden: 72
+n_layers: 6
 output_dim: ${num_classes}
-# Step size of the coordinate update inside a block.
-c_weight: 1.0e-3
-dropout: 0.2
-# Two beam nodes, co-transformed with the jet, which fix the frame the scalars are read in.
-add_beams: true
-# In GeV, the reference's value.
-beam_mass: 1.0
+# Step size of the coordinate update inside a block; this and the dropout are the sibling's
+# search result.
+c_weight: 0.0027709064824151504
+dropout: 0.1
 nconstituents: ${data.nconstituents}
+# The node scalar is psi of the batch's m2 column, the float64 E^2 - |p|^2 of the canonical
+# row, which no transform changes: a departure from the sibling, whose float32 E^2 - |p|^2
+# of a massless constituent is rounding that each transform reshuffles. computed restores
+# the sibling's network; the weights are the same for both.
+node_scalar: stored

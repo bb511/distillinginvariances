@@ -1,0 +1,64 @@
+# @package _global_
+
+# The layer-wise orbit-variance profile of one checkpoint: the invariance fraction of every
+# layer under every probe on a seeded subset of one split, appended to the profile table,
+# with the torus spectrum or the transposition map of each layer in <output_dir>/profile/.
+defaults:
+  - _self_
+  - study: default
+  - data: jets
+  - net@teacher_net: deepsets
+  - net@student_net: mlp_jets
+  - algorithm: classifier
+  - trainer: default
+  - paths: default
+  - extras: default
+  - hydra: default
+  - experiment: null
+  - method: teacher
+  - optional local: default
+  - debug: null
+
+task_name: "profile"
+
+tags: ["dev"]
+
+experiment_name: distilling_symmetries_dev
+
+seed: 12345
+
+# null: the main run; an integer in 1..data.n_folds: that fold (train.yaml).
+fold: null
+
+# The checkpoint, found as eval.yaml finds it.
+checkpoint_manifest_path: ${paths.log_dir}/${train_task}/${run_dir}/checkpoint_manifest.json
+ckpt_path: null
+
+eval_split: test
+# null: the run's own rows (DATA_OF_REGIME), or canonical / transformed.
+eval_data: null
+
+# The probes as in eval.yaml; n_draws is the Monte Carlo orbit size per sample. A full
+# torus (translation with max_shift null) is enumerated exactly instead.
+probe:
+  n_draws: 16
+  lorentz_eta_max: 1.0
+  max_shift: null
+  n_swaps: null
+probe_subgroups: null
+
+profile:
+  # Rows of eval_split, a subset drawn with seed.
+  n_samples: 2000
+  batch_size: 32
+  # The 50 x 50 transposition map of every layer under the permutation probe.
+  transpositions: true
+  n_boot: 1000
+
+# true: the same architecture at a seeded initialisation, the untrained control.
+random_init: false
+
+results:
+  path: ${paths.results_dir}/profile.csv
+
+variant: null

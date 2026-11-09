@@ -1,0 +1,60 @@
+# @package _global_
+
+# The hls4ml jets under rotations in three dimensions: a LLoCa teacher with SO(3) frames,
+# exact under that group, and an MLP student on [pt, eta, phi].
+defaults:
+  - override /data: jets
+  - override /net@teacher_net: lloca
+  - override /net@student_net: mlp_jets_abs
+  - override /trainer: gpu
+
+teacher: lloca_so3
+num_classes: 5
+input_shape: [50, 16]
+
+tags: ["jets", "lloca_so3", "so3"]
+experiment_name: distilling_symmetries_jets_lloca_so3
+
+# data.batch_size, hint_lr and relational_batch_size are the students' fixed values, Distillation
+# I's to change.
+data:
+  group: so3
+  batch_size: 1024
+
+# The architecture and recipe of the sibling's 50-constituent row (jet_tagging_gdl,
+# lloca_so3/nconst50/baseline), read from its checkpoints and its runs' .hydra/config.yaml, so
+# that hp_tag and config_hash name the teacher src/import_teacher.py brings in. The sibling also
+# trained compiled, clipped gradients at 1.0 and stopped early after 100 epochs without
+# improvement; those settings stay this study's own.
+teacher_net:
+  frames: so3
+  num_blocks: 8
+  num_heads: 8
+  attn_scalars: 8
+  attn_vectors: 1
+  mlp_factor: 4
+  dropout: 0.0
+  framesnet_hidden: 64
+teacher_lr: 0.0006710355529113164
+teacher_batch_size: 1024
+teacher_optimizer:
+  _target_: torch.optim.AdamW
+  weight_decay: 0.05
+# A node of its own, interpolated whole: written out under teacher_scheduler it would merge
+# into the plateau scheduler of the study config. Stepped per batch; total_steps, read from the
+# checkpoints, is 200 epochs of 484 batches of 1024 jets.
+lloca_teacher_scheduler:
+  scheduler:
+    _target_: torch.optim.lr_scheduler.OneCycleLR
+    _partial_: true
+    max_lr: ${teacher_lr}
+    total_steps: 96800
+    pct_start: 0.2
+  interval: step
+  frequency: 1
+teacher_scheduler: ${lloca_teacher_scheduler}
+hint_lr: 1.0e-3
+relational_batch_size: 1024
+
+extras:
+  matmul_precision: highest

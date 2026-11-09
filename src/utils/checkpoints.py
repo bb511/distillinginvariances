@@ -55,6 +55,9 @@ class Manifest:
     epochs_run: int
     best_metric: float | None = None
     mlflow_run_id: str | None = None
+    # Set by src/import_teacher.py alone: the sibling checkpoint the run was imported from.
+    source_checkpoint: str | None = None
+    source_sha256: str | None = None
     version: int = MANIFEST_VERSION
 
 
@@ -87,7 +90,17 @@ def read_manifest(path: str | Path) -> Manifest:
             f"{path} has manifest version {payload.get('version')!r}, this code reads "
             f"{MANIFEST_VERSION}. Re-run the training that wrote it."
         )
-    return Manifest(**payload)
+    return _rebased(Manifest(**payload), Path(path).parent)
+
+
+def _rebased(manifest: Manifest, run_dir: Path) -> Manifest:
+    """The manifest with its checkpoint found under *run_dir* when the recorded absolute
+    path is absent, as for a run directory copied to another machine (olgpu to NGT)."""
+    ckpt, written_in = Path(manifest.checkpoint_path), manifest.hydra_output_dir
+    if ckpt.exists() or not ckpt.is_relative_to(written_in):
+        return manifest
+    manifest.checkpoint_path = str(run_dir / ckpt.relative_to(written_in))
+    return manifest
 
 
 def existing_manifest(output_dir: str | Path) -> Manifest | None:

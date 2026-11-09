@@ -1,0 +1,22 @@
+# @package _global_
+
+# The circular CNN search (02_teachers.md): depth, widths, kernel, head and optimiser of the
+# MNIST teacher, on the canonical main run with experiment=mnist_cnn and method=teacher. The
+# batch (128), stride, circular padding, global average pool and ReLU stay those of
+# net/cnn.yaml and the experiment; the zero-padded control takes the selected recipe as it is.
+defaults:
+  - /hparams_search/optuna
+
+hydra:
+  sweeper:
+    storage: sqlite:///logs/optuna/teacher.db?timeout=600
+    study_name: cnn_circular_${data.regime}
+    n_trials: 200
+
+    params:
+      teacher_net.phi_channels: choice([16,32], [32,32], [32,64], [16,32,64], [32,64,64], [64,64,64], [32,64,128], [32,64,64,64])
+      teacher_net.kernel_size: choice(3, 5)
+      teacher_net.rho_layers: choice([64], [128], [128,64])
+      # teacher_optimizer.lr interpolates it, and so does the hp_tag of method/teacher.yaml.
+      teacher_lr: tag(log, interval(1e-4, 1e-2))
+      teacher_optimizer.weight_decay: choice(0.0, 1e-7, 1e-6, 1e-5, 1e-4)

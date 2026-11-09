@@ -1,0 +1,7 @@
+# The capacity control of the DeepSets cell: the selected [pt, etarel, phirel] stack at twice its
+# widths, about four times its multiply-accumulates, unsearched.
+defaults:
+  - mlp_jets
+  - _self_
+
+width_factor: 2

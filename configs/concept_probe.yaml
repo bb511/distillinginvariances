@@ -1,0 +1,66 @@
+# @package _global_
+
+# Frame and concept probes of one checkpoint, with LEACE erasure of the frame: a seeded
+# subset of one split is moved once by a seeded draw of the cell's group; every layer is
+# probed for the draw's frame at g.x and for orbit-invariant concepts at x, and each hidden
+# layer of a student has the frame erased against random removals of equal rank. Rows go to
+# the probe table.
+defaults:
+  - _self_
+  - study: default
+  - data: jets
+  - net@teacher_net: deepsets
+  - net@student_net: mlp_jets
+  - algorithm: classifier
+  - trainer: default
+  - paths: default
+  - extras: default
+  - hydra: default
+  - experiment: null
+  - method: teacher
+  - optional local: default
+  - debug: null
+
+task_name: "probe"
+
+tags: ["dev"]
+
+experiment_name: distilling_symmetries_dev
+
+seed: 12345
+
+# null: the main run; an integer in 1..data.n_folds: that fold (train.yaml).
+fold: null
+
+# The checkpoint, found as eval.yaml finds it; the teacher gives the fidelity under erasure.
+checkpoint_manifest_path: ${paths.log_dir}/${train_task}/${run_dir}/checkpoint_manifest.json
+ckpt_path: null
+
+eval_split: test
+# Canonical rows, so the frame of every g.x is the draw itself whatever regime the
+# checkpoint was trained in.
+eval_data: canonical
+
+# The draw of the cell's group (data.group); one per sample.
+probe:
+  n_draws: 1
+  lorentz_eta_max: 1.0
+  max_shift: null
+  n_swaps: null
+
+probing:
+  n_samples: 20000
+  batch_size: 1024
+  # The leading share of the subset fits the probes and the erasers, the rest scores them.
+  train_share: 0.7
+  n_boot: 200
+  # Random removals of the frame's rank, per layer.
+  n_controls: 20
+
+# true: the same architecture at a seeded initialisation, the selectivity baseline.
+random_init: false
+
+results:
+  path: ${paths.results_dir}/probes.csv
+
+variant: null

@@ -114,7 +114,8 @@ repos:
       - id: codespell
         args:
           - --skip=logs/**,data/**,*.ipynb
-          # - --ignore-words-list=abc,def
+          # LEACE, the concept-erasure method (arXiv:2306.03819).
+          - --ignore-words-list=leace
 
   # jupyter notebook cell output clearing
   - repo: https://github.com/kynan/nbstripout

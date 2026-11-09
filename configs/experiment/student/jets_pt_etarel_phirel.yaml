@@ -1,0 +1,26 @@
+# @package _global_
+
+# The student search on [pt, etarel, phirel], the input of the DeepSets cell: the baseline
+# student alone, no teacher, on the canonical main run.
+defaults:
+  - override /data: jets
+  - override /net@student_net: mlp_jets
+  - override /trainer: gpu
+
+teacher: none
+num_classes: 5
+input_shape: [50, 16]
+
+tags: ["jets", "student", "pt_etarel_phirel"]
+experiment_name: distilling_symmetries_student_jets_pt_etarel_phirel
+
+# The batch of every student stage in every jets cell (user, 8 Nov 2026), so that the learning
+# rate selected here holds for all of them.
+data:
+  batch_size: 1024
+
+# The Optuna study, completed by the regime in configs/hparams_search/student/.
+search_study: student_jets_pt_etarel_phirel
+
+extras:
+  matmul_precision: highest

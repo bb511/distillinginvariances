@@ -1,0 +1,8 @@
+# The four-momentum student of the z cell: the [pt, eta, phi] stack, unsearched, on [px, py, pz, e],
+# whose wider first layer may exceed the 30k multiply-accumulates of the searched students.
+defaults:
+  - mlp_jets_abs
+  - _self_
+
+in_dim: 200
+required_features: [px, py, pz, e]

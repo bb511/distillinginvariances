@@ -33,20 +33,28 @@ RUN apt-get update \
       git \
       ca-certificates \
       openssh-client \
+      build-essential \
  && rm -rf /var/lib/apt/lists/*
 
+# Poetry in a venv of its own: installed into /opt/venv, it would have its own dependencies
+# (distlib among them) replaced under it by the lock's versions mid-install.
+RUN python -m venv /opt/poetry \
+ && /opt/poetry/bin/pip install --upgrade pip \
+ && /opt/poetry/bin/pip install "poetry==${POETRY_VERSION}"
+
 RUN python -m venv /opt/venv \
- && pip install --upgrade pip setuptools wheel \
- && pip install "poetry==${POETRY_VERSION}"
+ && /opt/venv/bin/pip install --upgrade pip setuptools wheel
 
 WORKDIR /deps
 COPY pyproject.toml poetry.lock /deps/
 
 # package-mode is false, so there is no project to install, only its dependencies; the dev
-# group (pytest, pre-commit) is included so the tests can run on a pod.
+# group (pytest, pre-commit) is included so the tests can run on a pod, and the optional hgq
+# group (HGQ2, Keras, JAX, alkaid) so the quantised student trains and exports there.
+# build-essential above serves any of them that builds from source.
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pypoetry \
-    poetry install --no-ansi --no-root
+    /opt/poetry/bin/poetry install --no-ansi --no-root --with hgq
 
 ############################
 # runtime

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Average the results table over the folds of each run.
 
-One output row per distinct run (everything the contract identifies a run by except the
-fold), carrying the mean and the population standard deviation of every metric and the
-number of folds behind them. The spread is the one across folds, not an error on the
-mean: the folds share the pool, so they are not independent samples.
+One output row per distinct run and probe (everything the contract identifies a row by
+except the fold), carrying the mean and the population standard deviation of every
+metric and the number of folds behind them. The spread is the one across folds, not an
+error on the mean: the folds share the pool, so they are not independent samples. The
+main run's rows are no fold and are left out.
 
 python3 scripts/analysis/summarise.py python3 scripts/analysis/summarise.py --results
 results/results.csv --out results/summary.csv
@@ -22,7 +23,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from src.vocabulary import RESULT_COLUMNS  # noqa: E402
+from src.vocabulary import MAIN_FOLD, RESULT_COLUMNS  # noqa: E402
 
 _FIRST_METRIC = RESULT_COLUMNS.index("accuracy")
 # epochs_run is a measured quantity, not a knob: early stopping ends each fold at its own
@@ -37,7 +38,7 @@ VALUE_COLUMNS = ("epochs_run", *RESULT_COLUMNS[_FIRST_METRIC:])
 
 def _read(path: Path) -> list[dict[str, str]]:
     with path.open(newline="") as handle:
-        return list(csv.DictReader(handle))
+        return [row for row in csv.DictReader(handle) if row["fold"] != MAIN_FOLD]
 
 
 def _grouped(rows: list[dict[str, str]]) -> dict[tuple[str, ...], list[dict[str, str]]]:

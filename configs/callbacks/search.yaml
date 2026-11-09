@@ -1,0 +1,10 @@
+# @package callbacks
+
+# A trial keeps its best epoch alone: the selected point is refit from its catalogue, and the
+# study database is the search's only durable record.
+defaults:
+  - default
+  - _self_
+
+model_checkpoint:
+  save_last: false

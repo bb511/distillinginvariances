@@ -29,7 +29,7 @@ from src.data.components.dataset import TensorBatchDataset
 from src.data.components.teacher_cache import TeacherCache, read_cache
 from src.data.components.transformed import cached_transform, transformed_split
 from src.utils.pylogger import RankedLogger
-from src.vocabulary import GROUPS, MAIN_FOLD, REGIMES, TEACHER_REGIME
+from src.vocabulary import GROUPS, MAIN_FOLD, REGIMES, TEACHER_REGIME, regime_tag
 
 log = RankedLogger(__name__, rank_zero_only=True)
 
@@ -87,10 +87,14 @@ class FoldedDataModule(LightningDataModule):
     take the momenta back to GeV; and every split is rebased with
     `~src.data.components.augmentation.rebase_on_kept_axis` as it is loaded, so that
     etarel, phirel, deltaR and ptrel are measured from the axis of the kept
-    constituents, as every transform measures them. No net may read erel, etarot,
-    phirot, costheta or costhetarel, which the four-vector transforms leave stale. Its
-    experiment config sets ``num_classes`` and ``input_shape`` to the subclass's values,
-    and it has its own data, experiment and ``mlp_<name>`` net configs and an entry in
+    constituents, as every transform measures them; then
+    `~src.data.components.augmentation.append_mass_column` appends the squared mass of
+    each constituent, which every transform leaves as it was. No net may read erel,
+    etarot, phirot, costheta or costhetarel, which the four-vector transforms leave
+    stale. Its experiment config sets ``num_classes`` and ``input_shape``; the last axis
+    of ``input_shape`` enters only the module's example input, which is reduced to the
+    net's columns, so it may omit the mass column for a net that does not read it. It
+    has its own data, experiment and ``mlp_<name>`` net configs and an entry in
     `src.vocabulary.DATASETS`.
 
     :param transform_kwargs: the knobs of
@@ -267,8 +271,12 @@ class FoldedDataModule(LightningDataModule):
     def _transform_key(self, split: str, seed: int, n: int) -> dict:
         """What a cached draw must agree on to be reused."""
         # An unset n_swaps stays out of the key, so the caches drawn before the key had it
-        # (all drawn with it unset) are still reused.
-        n_swaps = self.transform_kwargs.get("n_swaps")
+        # (all drawn with it unset) are still reused. The columns enter it so that a
+        # draw stored before the mass column was appended is redrawn; MNIST has none.
+        optional = {
+            "n_swaps": self.transform_kwargs.get("n_swaps"),
+            "columns": self.feature_names,
+        }
         return {
             "group": self.group,
             "seed": seed,
@@ -277,7 +285,7 @@ class FoldedDataModule(LightningDataModule):
             "lorentz_eta_max": self.transform_kwargs.get("lorentz_eta_max"),
             "max_shift": self.transform_kwargs.get("max_shift"),
             "split": split,
-        } | ({} if n_swaps is None else {"n_swaps": n_swaps})
+        } | {name: value for name, value in optional.items() if value is not None}
 
     def _builder(self, x: torch.Tensor, seed: int):
         def build() -> tuple[torch.Tensor, torch.Tensor | None]:
@@ -327,7 +335,7 @@ class FoldedDataModule(LightningDataModule):
             return None
         expect = {
             "dataset": self.dataset,
-            "regime": TEACHER_REGIME[self.regime],
+            "regime": regime_tag(TEACHER_REGIME[self.regime], self.group),
             "fold": MAIN_FOLD if self.fold_idx is None else self.fold_idx + 1,
             "n_folds": self.n_folds,
         }

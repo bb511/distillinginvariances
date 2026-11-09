@@ -35,3 +35,20 @@ def test_the_augmented_regime_reads_the_canonical_teacher() -> None:
     assert cfg.teacher_regime == "canonical"
     cfg.regime = "transformed"
     assert cfg.teacher_regime == "transformed"
+
+
+def test_only_the_canonical_regime_is_shared_across_groups() -> None:
+    cfg = OmegaConf.create(
+        {
+            "regime": "transformed",
+            "group": "z",
+            "tag": "${regime_tag:${regime},${group}}",
+            "teacher_tag": "${regime_tag:${regime_of_teacher:${regime}},${group}}",
+        }
+    )
+
+    assert (cfg.tag, cfg.teacher_tag) == ("transformed_z", "transformed_z")
+    cfg.regime = "augmented"
+    assert (cfg.tag, cfg.teacher_tag) == ("augmented_z", "canonical")
+    cfg.regime = "canonical"
+    assert (cfg.tag, cfg.teacher_tag) == ("canonical", "canonical")

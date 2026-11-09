@@ -1,0 +1,10 @@
+# The frame-dependent control teacher (arXiv:2601.17215) on [pt, eta, phi], at the architecture
+# of the sibling's 50-constituent row (jet_tagging_gdl, pt_eta_phi/jetformer/nconst50/baseline),
+# whose checkpoints src/import_teacher.py loads unchanged.
+_target_: src.algorithms.components.jetformer.JetFormerNet
+in_dim: 3
+embed_dim: 64
+num_heads: 4
+num_transformers: 4
+output_dim: ${num_classes}
+dropout: 0.0

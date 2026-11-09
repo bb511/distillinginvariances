@@ -1,0 +1,26 @@
+# @package _global_
+
+# The MNIST student search: the baseline student alone, no teacher, on the canonical main run
+# (a seeded 10k of the 60k training images held out).
+defaults:
+  - override /data: mnist
+  - override /net@student_net: mlp_mnist
+  - override /trainer: gpu
+
+teacher: none
+num_classes: 10
+input_shape: [1, 28, 28]
+
+tags: ["mnist", "student"]
+experiment_name: distilling_symmetries_student_mnist
+
+# The batch of every MNIST student stage (user, 8 Nov 2026), so that the learning rate selected
+# here holds for all of them.
+data:
+  batch_size: 128
+
+# The Optuna study, completed by the regime in configs/hparams_search/student/.
+search_study: student_mnist
+
+extras:
+  matmul_precision: highest

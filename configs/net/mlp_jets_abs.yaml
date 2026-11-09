@@ -1,0 +1,7 @@
+# The jets student on the absolute angles, [pt, eta, phi]: the input of the LorentzNet and LLoCa
+# cells. The stack is a placeholder until scripts/search/studies.py writes the search's selection.
+_target_: src.algorithms.components.mlp.MLPStudent
+in_dim: 150
+hidden: [64, 32, 32, 32]
+output_dim: ${num_classes}
+required_features: [pt, eta, phi]

@@ -19,6 +19,10 @@ data:
   # 128 for every stage here, as in the runs this study reproduces.
   batch_size: 128
 
+# The recipe, teacher_lr and teacher_optimizer.weight_decay here with phi_channels,
+# kernel_size and rho_layers in net/cnn.yaml, is filled in from the study
+# cnn_circular_canonical of logs/optuna/teacher.db after the search
+# (hparams_search/teacher/mnist_cnn_optuna.yaml); mnist_cnn_zeros inherits it.
 teacher_lr: 1.0e-3
 teacher_batch_size: 128
 hint_lr: 1.0e-3

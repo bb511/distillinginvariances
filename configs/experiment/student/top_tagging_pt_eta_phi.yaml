@@ -1,0 +1,26 @@
+# @package _global_
+
+# The student search on the top-tagging set, [pt, eta, phi] of 100 constituents, the input of
+# its LorentzNet cell: the baseline student alone, no teacher, on the canonical main run.
+defaults:
+  - override /data: top_tagging
+  - override /net@student_net: mlp_top
+  - override /trainer: gpu
+
+teacher: none
+num_classes: 2
+input_shape: [100, 9]
+
+tags: ["top_tagging", "student", "pt_eta_phi"]
+experiment_name: distilling_symmetries_student_top_tagging_pt_eta_phi
+
+# The batch of the hls4ml jets' student stages, so that the learning rate selected here holds
+# for every top-tagging student stage.
+data:
+  batch_size: 1024
+
+# The Optuna study, completed by the regime in configs/hparams_search/student/.
+search_study: student_top_tagging_pt_eta_phi
+
+extras:
+  matmul_precision: highest

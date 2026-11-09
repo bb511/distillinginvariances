@@ -1,0 +1,65 @@
+# @package _global_
+
+# The two-sample coverage of one probe in one cell: a small classifier learns to tell the
+# student's inputs x from their first probe draw g.x on the main run's validation rows, and
+# its AUC on the test rows, whole and per magnitude bin, is appended to the coverage table.
+defaults:
+  - _self_
+  - study: default
+  - data: jets
+  # Composed so that the experiment configs can override them; the student's columns are
+  # the classifier's input.
+  - net@teacher_net: deepsets
+  - net@student_net: mlp_jets
+  - algorithm: classifier
+  - trainer: default
+  - paths: default
+  - extras: default
+  - hydra: default
+  - experiment: null
+  - method: teacher
+  - optional local: default
+  - debug: null
+
+task_name: "coverage"
+
+tags: ["dev"]
+
+experiment_name: distilling_symmetries_dev
+
+# The seed, the probe settings and batch_size_eval fix the draws (probe_rng in
+# src/metrics/evaluate.py): at eval.yaml's values, and on the same device type, the g.x are
+# those of the evaluation's dumps.
+seed: 12345
+
+# null: the main run, whose validation rows train the classifier.
+fold: null
+
+# The rows probed: null for the run's own (DATA_OF_REGIME), or canonical / transformed.
+eval_data: null
+
+# The group probed; null takes the cell's own, data.group.
+probe_group: null
+probe:
+  n_draws: 1
+  lorentz_eta_max: 1.0
+  max_shift: null
+  n_swaps: null
+
+batch_size_eval: 1024
+
+classifier:
+  hidden: [64, 64]
+  epochs: 10
+  lr: 1.0e-3
+  batch_size: 1024
+
+# Magnitude name (a mag_ column of a dump, or its abs_ and shift_dist forms) -> bin edges,
+# as coverage_bins={moved:[0,25,50]}; null: the whole draw alone. Null rather than {}, which
+# Hydra would hold as a struct closed to new keys.
+coverage_bins: null
+
+n_boot: 1000
+
+results:
+  path: ${paths.results_dir}/coverage.csv

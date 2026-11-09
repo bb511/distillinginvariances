@@ -18,7 +18,11 @@ from hydra.core.global_hydra import GlobalHydra
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 
-from src.data.components.augmentation import rebase_on_kept_axis
+from src.data.components.augmentation import (
+    MASS_COLUMN,
+    append_mass_column,
+    rebase_on_kept_axis,
+)
 from src.data.components.folds import FoldedDataModule
 from src.utils.pylogger import RankedLogger
 
@@ -45,8 +49,9 @@ class JetsDataModule(FoldedDataModule):
     record measures etarel, phirel, deltaR and ptrel from the untruncated jet's axis,
     whereas every transform downstream measures them from the batch it is handed.
 
-    Batches carry all 16 record columns, ``(jets, constituents, features)``; every
-    network reduces them to the columns it reads.
+    Batches carry all 16 record columns and `MASS_COLUMN`, appended as each split is
+    loaded, ``(jets, constituents, 17)``; every network reduces them to the columns it
+    reads.
 
     :param revision: string with a HF repository commit pin; None goes to HEAD.
     :param cache_dir: the local cache path ``paths.base_data_dir``;
@@ -114,7 +119,7 @@ class JetsDataModule(FoldedDataModule):
     @property
     def input_shape(self) -> tuple[int, int]:
         """The stored width of one jet, (constituents, features); needs the record."""
-        return (self.nconstituents, len(self._ensure_record().feature_names))
+        return (self.nconstituents, len(self._ensure_record().feature_names) + 1)
 
     @property
     def norm_params(self) -> dict[str, tuple[str, float]] | None:
@@ -175,18 +180,20 @@ class JetsDataModule(FoldedDataModule):
         self.record = instantiate(
             compose_record_config(root, self._record_overrides(root)).data
         )
-        self.feature_names = list(self.record.feature_names)
+        self.feature_names = [*self.record.feature_names, MASS_COLUMN]
         log.info(f"Record {REPO_ID} at {root}, cache {self.record.cache_folder}")
 
         return self.record
 
     def _load(self, split: str) -> tuple[torch.Tensor, torch.Tensor]:
-        """The jets and one-hot labels of *split*, rebased on the kept axis."""
+        """The jets of *split*, rebased on the kept axis and with `MASS_COLUMN`
+        appended, and their one-hot labels."""
         data = self._ensure_record().load(split)
         x, scales = data.x.clone(), self.norm_scales
+        names = list(self.record.feature_names)
         for chunk in x.split(REBASE_CHUNK):
-            chunk.copy_(rebase_on_kept_axis(chunk, self.feature_names, scales))
-        return x, data.y
+            chunk.copy_(rebase_on_kept_axis(chunk, names, scales))
+        return append_mass_column(x, names, scales), data.y
 
 
 def compose_record_config(root: str, overrides: list) -> DictConfig:
