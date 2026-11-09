@@ -261,27 +261,36 @@ class KerasQuantisedModule(Classifier):
         return ebops
 
     def export(
-        self, directory: str | Path, datamodule, provenance: dict[str, Any]
+        self,
+        directory: str | Path,
+        datamodule,
+        provenance: dict[str, Any],
+        split: str = "test",
     ) -> dict[str, Any]:
         """Trace the port on the run's training split, then write what synthesis reads
-        of the test split: the files of ``export_port`` and ``reference.npz``, which
-        holds ``logits_clean``, the (rows, classes) logits in Keras's float type, and
+        of *split*: the files of ``export_port`` and ``reference.npz``, which holds
+        ``logits_clean``, the (rows, classes) logits in Keras's float type, and
         ``labels``, the (rows,) class indices.
 
-        :param provenance: entries of ``export.json`` beside the port's own; its
-            ``row`` names the design in the CSV of synthesise.py.
+        :param provenance: entries of ``export.json`` beside the port's own; its ``row``
+            names the design in the CSV of synthesise.py.
+        :param split:``test`` for a design to synthesise, ``fold`` (the run's validation
+            rows) for a latency estimate that must not read the test split.
         :return: the contents of ``export.json``.
         :raises ValueError: when JAX does not run on the CPU.
         """
         self.trace(datamodule)
-        x, y, _ = datamodule.split("test")
+        x, y, _ = datamodule.split(split)
         rows = self._keras_inputs(x)
         logits, labels = self.net.predict(rows), y.argmax(dim=1).numpy()
-        meta = self._export_meta(datamodule, logits, labels) | provenance
+        meta = self._export_meta(datamodule, logits, labels) | {"split": split}
+        meta |= provenance
         words = self.net.quantised_inputs(rows)
         export_port(directory, self.net.keras_model, words, meta)
         np.savez(Path(directory) / REFERENCE_FILE, logits_clean=logits, labels=labels)
-        log.info(f"Exported the traced port and {len(labels)} test rows to {directory}")
+        log.info(
+            f"Exported the traced port and {len(labels)} {split} rows to {directory}"
+        )
         return meta
 
     def _export_meta(
@@ -296,8 +305,8 @@ class KerasQuantisedModule(Classifier):
             **{key: self.hparams[key] for key in keys},
             "ebops": int(self.ebops_total),
             "quantisation": asdict(self.quantisation),
-            "n_test": len(labels),
-            # The micro accuracy, as results.csv's accuracy column.
-            "test_accuracy": float(np.mean(logits.argmax(axis=1) == labels)),
+            "n_rows": len(labels),
+            # The micro accuracy on the exported split, as results.csv's accuracy column.
+            "accuracy": float(np.mean(logits.argmax(axis=1) == labels)),
             "versions": {name: version(name) for name in VERSIONED},
         }

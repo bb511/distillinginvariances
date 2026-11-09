@@ -9,7 +9,7 @@ defaults:
 
 teacher: none
 num_classes: 5
-input_shape: [50, 16]
+input_shape: [50, 17]
 
 tags: ["jets", "student", "pt_eta_phi"]
 experiment_name: distilling_symmetries_student_jets_pt_eta_phi

@@ -4,10 +4,10 @@
 The run directory of an ``hgq`` stage holds its composed config (``.hydra/config.yaml``)
 and its manifest. The datamodule is rebuilt from that config and the checkpoint loaded
 with JAX on the CPU; the integer bits of every wrapping quantiser are traced on the
-run's training split (the main run's for ``fold=null``), and the test split is
-predicted. ``--out``, by default ``<run dir>/export``, receives ``model.keras``,
-``inputs.npz`` (the words the port reads), ``export.json`` and ``reference.npz`` (the
-logits and the labels)::
+run's training split (the main run's for ``fold=null``), and the test split (or, under
+``--split fold``, the run's validation rows) is predicted. ``--out``, by default
+``<run dir>/export``, receives ``model.keras``, ``inputs.npz`` (the words the port
+reads), ``export.json`` and ``reference.npz`` (the logits and the labels)::
 
     python scripts/synthesis/export_hgq.py \\
         --run-dir logs/train/jets/deepsets/canonical/hgq/main/lr0.003 --out <dir>
@@ -45,6 +45,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--run-dir", type=Path, required=True, help="an hgq run")
     parser.add_argument("--ckpt", help="None: the checkpoint the manifest names")
     parser.add_argument("--out", type=Path, help="None: <run dir>/export")
+    parser.add_argument(
+        "--split",
+        choices=("test", "fold"),
+        default="test",
+        help="the rows exported: test for synthesis, fold (validation) for an estimate",
+    )
     return parser.parse_args(argv)
 
 
@@ -78,8 +84,9 @@ def main(argv: list[str] | None = None) -> int:
     datamodule, module = _datamodule(cfg), _load(cfg, checkpoint)
     module.bind(datamodule)
     provenance = {"row": str(cfg.run_dir), "ckpt_path": str(checkpoint)}
-    meta = module.export(args.out or args.run_dir / "export", datamodule, provenance)
-    log.info(f"{meta['ebops']} EBOPs, test accuracy {meta['test_accuracy']:.4f}")
+    out = args.out or args.run_dir / "export"
+    meta = module.export(out, datamodule, provenance, args.split)
+    log.info(f"{meta['ebops']} EBOPs; {meta['n_rows']} {args.split} rows exported")
     return 0
 
 
