@@ -1,8 +1,8 @@
-# The top-tagging student on the absolute angles of 100 constituents, [pt, eta, phi]. The stack
-# is a placeholder until scripts/search/studies.py writes the search's selection; at 300 inputs
-# the first layer is at most 64 wide under 30k multiply-accumulates.
+# The top-tagging student on the absolute angles of 100 constituents, [pt, eta, phi]. At 300
+# inputs the first layer is at most 64 wide under 30k multiply-accumulates.
 _target_: src.algorithms.components.mlp.MLPStudent
 in_dim: 300
-hidden: [64, 32, 32]
+# Selected by scripts/search/studies.py: study student_top_tagging_pt_eta_phi_canonical, trial 184 (best of the first 200 complete), val/acc_best 0.88742, lr 0.000707422426877928, weight_decay 1e-07.
+hidden: [64, 64, 32, 64]
 output_dim: ${num_classes}
 required_features: [pt, eta, phi]

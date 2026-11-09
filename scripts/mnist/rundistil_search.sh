@@ -13,8 +13,8 @@
 #   relational, alpha 0 and 2     learning rate, lambda_IS and lambda_IC, 60 trials, cosine
 #                                 (relational_optuna.yaml); the warm-up cosine schedule
 #                                 spans the 50 epochs, its length following trainer.max_epochs
-# Every trial keeps the selected student's weight decay, TODO_WD_MNIST, replaced once Student I
-# has chosen the student.
+# Every trial keeps the selected student's weight decay, 0.0001, as the comment of
+# configs/net/mlp_mnist.yaml records it.
 # The study is cnn_circular_<regime_tag>_<stage>, or cnn_circular_<regime_tag>_relational_a<alpha>,
 # with <regime_tag> canonical (1-5) or transformed_translation (6-10). A kd_hint search
 # warm-starts every trial from the main-run hint stage at seed 12345 (W0 of runcnn_train.sh),
@@ -32,60 +32,60 @@
 
 # 1. canonical  kd  (cnn_circular_canonical_kd)
 # python3 src/train.py -m experiment=mnist_cnn hparams_search=distillation/lr_optuna \
-#     method=kd algorithm.optimizer.weight_decay=TODO_WD_MNIST data.regime=canonical algorithm.temperature=4 algorithm.alpha=0 \
+#     method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=canonical algorithm.temperature=4 algorithm.alpha=0 \
 #     hydra.sweeper.n_trials=20 trainer.max_epochs=50 callbacks=search logger=none \
 #     trainer=gpu trainer.devices=[0]
 
 # 2. canonical  kd_hint  (cnn_circular_canonical_kd_hint)
 # python3 src/train.py -m experiment=mnist_cnn hparams_search=distillation/lr_optuna \
-#     method=kd_hint algorithm.optimizer.weight_decay=TODO_WD_MNIST data.regime=canonical algorithm.temperature=4 algorithm.alpha=0 \
+#     method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=canonical algorithm.temperature=4 algorithm.alpha=0 \
 #     hydra.sweeper.n_trials=20 trainer.max_epochs=50 callbacks=search logger=none \
 #     trainer=gpu trainer.devices=[0]
 
 # 3. canonical  logit_matching  (cnn_circular_canonical_logit_matching)
 # python3 src/train.py -m experiment=mnist_cnn hparams_search=distillation/lr_optuna \
-#     method=logit_matching algorithm.optimizer.weight_decay=TODO_WD_MNIST data.regime=canonical algorithm.temperature=4 algorithm.alpha=0 \
+#     method=logit_matching algorithm.optimizer.weight_decay=0.0001 data.regime=canonical algorithm.temperature=4 algorithm.alpha=0 \
 #     hydra.sweeper.n_trials=20 trainer.max_epochs=50 callbacks=search logger=none \
 #     trainer=gpu trainer.devices=[0]
 
 # 4. canonical  relational alpha 0  (cnn_circular_canonical_relational_a0)
 # python3 src/train.py -m experiment=mnist_cnn hparams_search=distillation/relational_optuna \
-#     method=relational algorithm.optimizer.weight_decay=TODO_WD_MNIST data.regime=canonical algorithm.discrepancy=cosine algorithm.alpha=0 \
+#     method=relational algorithm.optimizer.weight_decay=0.0001 data.regime=canonical algorithm.discrepancy=cosine algorithm.alpha=0 \
 #     hydra.sweeper.n_trials=60 trainer.max_epochs=50 callbacks=search logger=none \
 #     trainer=gpu trainer.devices=[0]
 
 # 5. canonical  relational alpha 2  (cnn_circular_canonical_relational_a2)
 # python3 src/train.py -m experiment=mnist_cnn hparams_search=distillation/relational_optuna \
-#     method=relational algorithm.optimizer.weight_decay=TODO_WD_MNIST data.regime=canonical algorithm.discrepancy=cosine algorithm.alpha=2 \
+#     method=relational algorithm.optimizer.weight_decay=0.0001 data.regime=canonical algorithm.discrepancy=cosine algorithm.alpha=2 \
 #     hydra.sweeper.n_trials=60 trainer.max_epochs=50 callbacks=search logger=none \
 #     trainer=gpu trainer.devices=[0]
 
 # 6. transformed  kd  (cnn_circular_transformed_translation_kd)
 # python3 src/train.py -m experiment=mnist_cnn hparams_search=distillation/lr_optuna \
-#     method=kd algorithm.optimizer.weight_decay=TODO_WD_MNIST data.regime=transformed algorithm.temperature=4 algorithm.alpha=0 \
+#     method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=transformed algorithm.temperature=4 algorithm.alpha=0 \
 #     hydra.sweeper.n_trials=20 trainer.max_epochs=50 callbacks=search logger=none \
 #     trainer=gpu trainer.devices=[0]
 
 # 7. transformed  kd_hint  (cnn_circular_transformed_translation_kd_hint)
 # python3 src/train.py -m experiment=mnist_cnn hparams_search=distillation/lr_optuna \
-#     method=kd_hint algorithm.optimizer.weight_decay=TODO_WD_MNIST data.regime=transformed algorithm.temperature=4 algorithm.alpha=0 \
+#     method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=transformed algorithm.temperature=4 algorithm.alpha=0 \
 #     hydra.sweeper.n_trials=20 trainer.max_epochs=50 callbacks=search logger=none \
 #     trainer=gpu trainer.devices=[0]
 
 # 8. transformed  logit_matching  (cnn_circular_transformed_translation_logit_matching)
 # python3 src/train.py -m experiment=mnist_cnn hparams_search=distillation/lr_optuna \
-#     method=logit_matching algorithm.optimizer.weight_decay=TODO_WD_MNIST data.regime=transformed algorithm.temperature=4 algorithm.alpha=0 \
+#     method=logit_matching algorithm.optimizer.weight_decay=0.0001 data.regime=transformed algorithm.temperature=4 algorithm.alpha=0 \
 #     hydra.sweeper.n_trials=20 trainer.max_epochs=50 callbacks=search logger=none \
 #     trainer=gpu trainer.devices=[0]
 
 # 9. transformed  relational alpha 0  (cnn_circular_transformed_translation_relational_a0)
 # python3 src/train.py -m experiment=mnist_cnn hparams_search=distillation/relational_optuna \
-#     method=relational algorithm.optimizer.weight_decay=TODO_WD_MNIST data.regime=transformed algorithm.discrepancy=cosine algorithm.alpha=0 \
+#     method=relational algorithm.optimizer.weight_decay=0.0001 data.regime=transformed algorithm.discrepancy=cosine algorithm.alpha=0 \
 #     hydra.sweeper.n_trials=60 trainer.max_epochs=50 callbacks=search logger=none \
 #     trainer=gpu trainer.devices=[0]
 
 # 10. transformed  relational alpha 2  (cnn_circular_transformed_translation_relational_a2)
 # python3 src/train.py -m experiment=mnist_cnn hparams_search=distillation/relational_optuna \
-#     method=relational algorithm.optimizer.weight_decay=TODO_WD_MNIST data.regime=transformed algorithm.discrepancy=cosine algorithm.alpha=2 \
+#     method=relational algorithm.optimizer.weight_decay=0.0001 data.regime=transformed algorithm.discrepancy=cosine algorithm.alpha=2 \
 #     hydra.sweeper.n_trials=60 trainer.max_epochs=50 callbacks=search logger=none \
 #     trainer=gpu trainer.devices=[0]

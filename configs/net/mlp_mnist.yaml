@@ -1,7 +1,8 @@
 # The MNIST student: a plain MLP on the flattened image, with no symmetry of its own.
 _target_: src.algorithms.components.mlp.MLPStudent
 in_dim: 784
-hidden: [256, 64, 64]
+# Selected by scripts/search/studies.py: study student_mnist_canonical, trial 156 (best of the first 200 complete), val/acc_best 0.97830, lr 0.004491388971536795, weight_decay 0.0001.
+hidden: [32, 44, 32]
 output_dim: ${num_classes}
 # MNIST batches carry no named columns.
 required_features: null

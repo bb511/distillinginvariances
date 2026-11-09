@@ -30,11 +30,11 @@
 # rows unconditionally, so on the main run it is submitted with the extra seeds alone.
 # [folds]: --folds 1-5, every point of the T and beta grids included (user, 9 Nov 2026).
 #
-# Placeholders: the tokens of runlloca_so3_train.sh, replaced by the same strings, and
-#   TODO_LR_STUDENT_ETA   the learning rate the teacher-free rows trained at, that of
-#                     student/jets_pt_eta_phi as its hp_tag spells it: the blocks 5-9 run
-#                     under jets_lloca_so3, whose own algorithm.optimizer.lr need not equal
-#                     it, and the manifest path interpolates it.
+# Placeholders: the tokens of runlloca_so3_train.sh, replaced by the same strings. The
+# teacher-free rows are evaluated at the learning rate they trained at, 0.0016805532396569512,
+# that of student/jets_pt_eta_phi as its hp_tag spells it: the blocks 5-9 run under
+# jets_lloca_so3, whose own algorithm.optimizer.lr need not equal it, and the manifest path
+# interpolates it.
 #
 # Every command is commented out: copy one to run it by hand, or feed the file to
 # scripts/cluster/submit.sh (olgpu) or submit_ngt.sh (a pod).
@@ -67,33 +67,33 @@
 
 # 5. baseline  canonical  [seeds] [folds]
 # python3 src/eval.py experiment=jets_lloca_so3 method=baseline data.regime=canonical \
-#     data.group=so3 algorithm.optimizer.lr=TODO_LR_STUDENT_ETA 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
+#     data.group=so3 algorithm.optimizer.lr=0.0016805532396569512 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 6. baseline  transformed  [seeds] [folds]
 # python3 src/eval.py experiment=jets_lloca_so3 method=baseline data.regime=transformed \
-#     data.group=so3 algorithm.optimizer.lr=TODO_LR_STUDENT_ETA 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
+#     data.group=so3 algorithm.optimizer.lr=0.0016805532396569512 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 7. label_smoothing  canonical  epsilon curve  [folds]
 # python3 src/eval.py -m experiment=jets_lloca_so3 method=label_smoothing data.regime=canonical \
-#     data.group=so3 algorithm.label_smoothing=0.05,0.1,0.2 algorithm.optimizer.lr=TODO_LR_STUDENT_ETA \
+#     data.group=so3 algorithm.label_smoothing=0.05,0.1,0.2 algorithm.optimizer.lr=0.0016805532396569512 \
 #     'hp_tag=abs_eps${algorithm.label_smoothing}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 8. label_smoothing  transformed  epsilon curve  [folds]
 # python3 src/eval.py -m experiment=jets_lloca_so3 method=label_smoothing data.regime=transformed \
-#     data.group=so3 algorithm.label_smoothing=0.05,0.1,0.2 algorithm.optimizer.lr=TODO_LR_STUDENT_ETA \
+#     data.group=so3 algorithm.label_smoothing=0.05,0.1,0.2 algorithm.optimizer.lr=0.0016805532396569512 \
 #     'hp_tag=abs_eps${algorithm.label_smoothing}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 9. baseline  augmented, on the transformed rows  [seeds] [folds]
 # python3 src/eval.py experiment=jets_lloca_so3 method=baseline data.regime=augmented \
-#     data.group=so3 algorithm.optimizer.lr=TODO_LR_STUDENT_ETA 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
+#     data.group=so3 algorithm.optimizer.lr=0.0016805532396569512 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
