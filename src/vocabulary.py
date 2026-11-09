@@ -16,6 +16,15 @@ TEACHERS = (
     "jetformer_aug_so2",
     "jetformer_symm_so2",
 )
+# The teachers of the control and learned-invariance rows. Each distils at its cell
+# teacher's selected point, so none is selected on, and none gives a firmware student.
+CONTROL_TEACHERS = (
+    "cnn_zeros",
+    "mlp",
+    "jetformer",
+    "jetformer_aug_so2",
+    "jetformer_symm_so2",
+)
 REGIMES = ("canonical", "transformed", "augmented")
 # The regime whose teacher run and cache each regime distils from: an invariant
 # teacher's outputs on a canonical row stand for any transform of it.
@@ -48,9 +57,21 @@ STAGES = (
     "kd_hint",
     "hint_beta",
     "relational",
+    "logit_matching",
+    "label_smoothing",
 )
-METHODS = ("teacher", "baseline", "kd", "hint", "hint_beta", "relational", "constant")
-OBJECTIVES = ("ce", "hint", "kd", "relational")
+METHODS = (
+    "teacher",
+    "baseline",
+    "kd",
+    "hint",
+    "hint_beta",
+    "relational",
+    "logit_matching",
+    "label_smoothing",
+    "constant",
+)
+OBJECTIVES = ("ce", "hint", "kd", "logit", "relational")
 DISCREPANCIES = ("mse", "cosine", "smooth_l1", "distance_mse")
 EVAL_SPLITS = ("fold", "test")
 # The rows an evaluation reads (eval_data), and the rows each training regime is
@@ -82,11 +103,16 @@ METHOD_OF_STAGE = {
     "kd_hint": "hint",
     "hint_beta": "hint_beta",
     "relational": "relational",
+    "logit_matching": "logit_matching",
+    "label_smoothing": "label_smoothing",
 }
 
 # The columns of results.csv, in this order: the figure code selects rows by them. One
-# row per (checkpoint, eval_split, probe). A probe knob is filled only on the groups it
-# acts on, and a blank max_shift or n_swaps there means the whole group.
+# row per (checkpoint, eval_split, probe). A training knob, temperature to
+# label_smoothing, is filled only on the stages whose objective reads it (STAGE_KNOBS in
+# src/utils/evaluation.py); label_smoothing is the epsilon of the label_smoothing stage's
+# targets. A probe knob is filled only on the groups it acts on, and a blank max_shift or
+# n_swaps there means the whole group.
 # Metric names: *_top1 are top-1 agreements (higher is better); *_sqrtjsd are mean
 # sqrt(JSD) in bits after each model's own temperature (lower is better); _g columns are
 # on the first probe draw g.x; inv_* compare a network with itself, tinv_* the teacher
@@ -98,8 +124,9 @@ METHOD_OF_STAGE = {
 RESULT_COLUMNS = (
     "dataset", "teacher", "regime", "method",
     "temperature", "alpha", "beta", "discrepancy", "lambda_is", "lambda_ic",
-    "lr", "batch_size", "epochs_run", "seed", "fold", "n_folds", "eval_split",
-    "eval_data", "probe_group", "probe_eta_max", "probe_max_shift", "probe_n_swaps",
+    "label_smoothing", "lr", "batch_size", "epochs_run", "seed", "fold", "n_folds",
+    "eval_split", "eval_data", "probe_group", "probe_eta_max", "probe_max_shift",
+    "probe_n_swaps",
     "accuracy", "accuracy_macro", "nll", "ece", "ece_bins",
     "fid_top1", "fid_sqrtjsd", "fid_top1_g", "fid_sqrtjsd_g",
     "inv_top1", "inv_sqrtjsd", "inv_M", "inv_top1_g", "inv_sqrtjsd_g",

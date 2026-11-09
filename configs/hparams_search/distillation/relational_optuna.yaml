@@ -1,0 +1,21 @@
+# @package _global_
+
+# The relational channel per cell, regime and alpha: learning rate, lambda_IS and lambda_IC
+# searched together, alpha and the cosine discrepancy fixed on the command line. The sibling's
+# protocol (TPE, 20 start-up trials), as Block 3 of the registration (08_tests.md) states for
+# the relational weights; 60 trials is the user's budget for three dimensions. The lambda
+# ranges widen the old fixed grid (lambda_IS 1 to 128, lambda_IC 1 to 32) by a factor two at
+# each end.
+defaults:
+  - /hparams_search/optuna
+
+hydra:
+  sweeper:
+    storage: sqlite:///logs/optuna/distillation.db?timeout=600
+    study_name: ${teacher}_${regime_tag}_relational_a${algorithm.alpha}
+    n_trials: 60
+
+    params:
+      algorithm.optimizer.lr: tag(log, interval(1e-4, 1e-2))
+      algorithm.lambda_is: tag(log, interval(0.5, 256))
+      algorithm.lambda_ic: tag(log, interval(0.5, 64))

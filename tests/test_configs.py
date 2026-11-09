@@ -164,6 +164,85 @@ def test_the_augmented_regime_distils_the_canonical_teacher(tmp_path: Path) -> N
     )
 
 
+def test_a_transformed_student_reads_the_canonical_teacher_and_its_own_cache(
+    tmp_path: Path,
+) -> None:
+    kd = _composed(
+        tmp_path,
+        "experiment=jets_jetformer",
+        "method=kd",
+        "data.regime=transformed",
+        "data.group=so3",
+    )
+
+    assert "/jetformer/canonical/teacher/main/" in kd.teacher_run_dir
+    assert kd.teacher_cache.endswith("/jetformer/transformed_so3/main.npz")
+    assert kd.run_dir.startswith("jets/jetformer/transformed_so3/kd/main/")
+
+
+def test_the_seed_names_every_student_run_and_its_hint_run(tmp_path: Path) -> None:
+    runs = {
+        seed: _composed(
+            tmp_path, "experiment=jets_deepsets", "method=kd_hint", f"seed={seed}"
+        )
+        for seed in (12345, 12346)
+    }
+    teacher = _composed(tmp_path, "experiment=jets_deepsets", "method=teacher")
+
+    assert runs[12345].hp_tag.endswith("_s12345")
+    assert runs[12345].run_dir != runs[12346].run_dir
+    assert runs[12346].hint_run_dir.endswith("/hint/main/lr0.001_s12346")
+    assert runs[12345].teacher_run_dir == runs[12346].teacher_run_dir
+    assert "_s" not in teacher.hp_tag
+
+
+@pytest.mark.parametrize(
+    "config", ["eval.yaml", "orbit_profile.yaml", "concept_probe.yaml"]
+)
+def test_a_seeded_checkpoint_is_probed_on_the_draws_of_every_other(config: str) -> None:
+    cfg = compose_root(
+        config, "experiment=jets_deepsets", "method=kd", "trainer=cpu", "seed=12346"
+    )
+
+    assert cfg.hp_tag.endswith("_s12346") and cfg.probe_seed == 12345
+
+
+@pytest.mark.parametrize(
+    ("experiment", "features"),
+    [
+        ("jets_deepsets", ["pt", "etarel", "phirel"]),
+        ("jets_mlp", ["pt", "etarel", "phirel"]),
+        ("jets_lorentznet", ["pt", "eta", "phi"]),
+        ("jets_lloca_z", ["pt", "eta", "phi"]),
+        ("jets_lloca_so3", ["pt", "eta", "phi"]),
+        ("jets_jetformer", ["pt", "eta", "phi"]),
+        ("jets_jetformer_symm_so2", ["pt", "eta", "phi"]),
+    ],
+)
+def test_every_jets_cell_trains_its_students_alike(
+    experiment: str, features: list[str], tmp_path: Path
+) -> None:
+    kd = _composed(tmp_path, f"experiment={experiment}", "method=kd")
+    relational = _composed(tmp_path, f"experiment={experiment}", "method=relational")
+
+    assert list(kd.student_net.required_features) == features
+    assert (kd.data.batch_size, relational.data.batch_size) == (1024, 1024)
+    assert kd.trainer.gradient_clip_val is None
+
+
+def test_the_acquisition_callbacks_add_a_periodic_checkpoint_after_the_best(
+    tmp_path: Path,
+) -> None:
+    cfg = _composed(
+        tmp_path, "experiment=jets_deepsets", "method=kd", "callbacks=acquisition"
+    )
+    names = list(cfg.callbacks)
+
+    assert names.index("model_checkpoint") < names.index("acquisition_checkpoint")
+    assert cfg.callbacks.acquisition_checkpoint.every_n_epochs == 5
+    assert cfg.callbacks.acquisition_checkpoint.save_top_k == -1
+
+
 def test_the_cache_refuses_the_augmented_regime_before_loading_anything(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

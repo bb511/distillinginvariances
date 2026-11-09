@@ -1,10 +1,12 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
+import torch
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, open_dict
 
-from src.train import train
+from src.train import _best_score, train
 from src.utils.checkpoints import config_hash, existing_manifest
 from src.vocabulary import MAIN_FOLD
 from tests.conftest import EXPERIMENTS, compose_root, needs_record, point_into
@@ -60,6 +62,20 @@ def test_one_batch_of_a_teacher_leaves_a_manifest_of_its_checkpoint(
         manifest.config_hash,
     ) == ("teacher", MAIN_FOLD, 2, 1, digest)
     assert float(metrics[cfg.monitor]) == pytest.approx(manifest.best_metric)
+
+
+def test_the_manifest_records_the_best_epoch_not_the_last() -> None:
+    last = {"val/acc": torch.tensor(0.7)}
+
+    def score(callback: SimpleNamespace | None) -> float:
+        trainer = SimpleNamespace(checkpoint_callback=callback, callback_metrics=last)
+        return float(_best_score(trainer, "val/acc"))
+
+    assert score(SimpleNamespace(best_model_score=torch.tensor(0.8))) == pytest.approx(
+        0.8
+    )
+    assert score(SimpleNamespace(best_model_score=None)) == pytest.approx(0.7)
+    assert score(None) == pytest.approx(0.7)
 
 
 def test_a_finished_run_is_neither_repeated_nor_silently_overwritten(

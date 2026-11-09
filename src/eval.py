@@ -50,6 +50,7 @@ CONSTANT_BLANKS = (
     "discrepancy",
     "lambda_is",
     "lambda_ic",
+    "label_smoothing",
     "lr",
     "batch_size",
     "epochs_run",
@@ -109,7 +110,7 @@ def _evaluate_splits(
             datamodule,
             split,
             probes,
-            cfg.seed,
+            cfg.probe_seed,
             temperatures,
             cfg.get("batch_size_eval", 1024),
         )
@@ -156,10 +157,11 @@ def _row_keys(split: str, data: str, probe: Probe) -> dict[str, Any]:
 
 
 def _draw_keys(cfg: DictConfig, probe: Probe, evaluation: Evaluation) -> dict[str, Any]:
-    """What a dump needs beside its row keys: what fixed its draws (with the seed in the
-    base) and the temperatures its sqrt(JSD) takes."""
+    """What a dump needs beside its row keys: what fixed its draws and the temperatures
+    its sqrt(JSD) takes."""
     student, teacher = evaluation.temperatures
     return {
+        "probe_seed": cfg.probe_seed,
         "probe_tag": probe.tag,
         "n_draws": probe.n_draws,
         "batch_size_eval": cfg.get("batch_size_eval", 1024),

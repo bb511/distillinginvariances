@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 import torch
+import torch.nn.functional as F
 from lightning import Trainer
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -90,7 +91,7 @@ def test_a_classifier_reduces_the_full_width_batch_to_its_columns(net: dict) -> 
     )
 
 
-@pytest.mark.parametrize("objective", ["hint", "kd", "relational"])
+@pytest.mark.parametrize("objective", ["hint", "kd", "logit", "relational"])
 def test_one_optimiser_step_per_objective(objective: str) -> None:
     module = _student(objective, alpha=0.5, beta=0.25)
     loss = module.model_step(_batch(module))["loss"]
@@ -138,3 +139,40 @@ def test_checkpoints_round_trip_and_leave_the_teacher_out(tmp_path: Path) -> Non
     assert not any("teacher" in key for key in student.state_dict())
     assert torch.allclose(student.eval()(x), loaded.eval()(x), atol=1e-6)
     assert not student.teacher().training and student.teacher() is student.teacher()
+
+
+def test_logit_matching_regresses_the_cached_logits_beside_alpha_ce() -> None:
+    module = _student("logit", alpha=0.5)
+    batch = _batch(module)
+
+    out = module.model_step(batch)
+
+    expected = F.mse_loss(out["logits"], batch[2])
+    expected = expected + 0.5 * F.cross_entropy(out["logits"], out["targets"])
+    assert torch.allclose(out["loss"], expected)
+
+
+def _cross_entropy(out: dict[str, torch.Tensor], eps: float = 0.0) -> torch.Tensor:
+    return F.cross_entropy(out["logits"], out["targets"], label_smoothing=eps)
+
+
+def test_label_smoothing_reaches_the_loss_and_old_checkpoints_still_load(
+    tmp_path: Path,
+) -> None:
+    smoothed = Classifier(
+        net=MLP, num_classes=5, input_shape=(8, 16), optimizer=ADAM, label_smoothing=0.1
+    )
+    batch = _batch(smoothed)[:2]
+    path = _fit_one_batch(_classifier(MLP), batch, tmp_path)
+    checkpoint = torch.load(path, weights_only=False)
+    del checkpoint["hyper_parameters"]["label_smoothing"]
+    torch.save(checkpoint, path)
+
+    out = smoothed.model_step(batch)
+    loaded = Classifier.load_from_checkpoint(path, weights_only=False)
+    plain = loaded.model_step(batch)
+
+    assert torch.allclose(out["loss"], _cross_entropy(out, 0.1))
+    assert not torch.allclose(out["loss"], _cross_entropy(out))
+    assert loaded.hparams.label_smoothing == 0.0
+    assert torch.allclose(plain["loss"], _cross_entropy(plain))

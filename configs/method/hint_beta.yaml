@@ -5,7 +5,7 @@ defaults:
   - override /algorithm: distillation
 
 stage: hint_beta
-hp_tag: T${algorithm.temperature}_a${algorithm.alpha}_b${algorithm.beta}_lr${algorithm.optimizer.lr}
+hp_tag: T${algorithm.temperature}_a${algorithm.alpha}_b${algorithm.beta}_lr${algorithm.optimizer.lr}_s${seed}
 
 monitor: val/acc
 monitor_mode: max

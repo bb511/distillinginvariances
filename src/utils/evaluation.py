@@ -20,7 +20,7 @@ from src.utils.pylogger import RankedLogger
 log = RankedLogger(__name__, rank_zero_only=True)
 
 # The stages whose checkpoint holds a plain classifier; every other stage distils.
-CLASSIFIER_STAGES = ("teacher", "baseline")
+CLASSIFIER_STAGES = ("teacher", "baseline", "label_smoothing")
 # The hyperparameter columns each stage's objective reads. The rest stay empty, so a row is
 # keyed by the knobs that produced it and no column carries a value nothing acted on.
 STAGE_KNOBS = {
@@ -28,6 +28,8 @@ STAGE_KNOBS = {
     "kd_hint": ("temperature", "alpha", "beta"),
     "hint_beta": ("temperature", "alpha", "beta"),
     "relational": ("alpha", "beta", "discrepancy", "lambda_is", "lambda_ic"),
+    "logit_matching": ("alpha",),
+    "label_smoothing": ("label_smoothing",),
 }
 
 

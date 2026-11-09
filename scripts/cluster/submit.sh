@@ -149,7 +149,8 @@ while IFS= read -r cmd; do
         run_cmd="$cmd"
         [ "$fold" = "keep" ] || run_cmd=$(substitute_fold "$cmd" "$fold")
         [ -z "$gpu" ] || run_cmd=$(pin_gpu "$run_cmd" "$gpu")
-        label=$(block_label "$run_cmd")
+        # With the trailing overrides, so a seed given at submission names the entry.
+        label=$(block_label "$run_cmd${extra:+ $extra}")
         full="$PYTHON $run_cmd${extra:+ $extra}"
         n_sub=$((n_sub + 1))
         if [ "$dry" -eq 1 ]; then

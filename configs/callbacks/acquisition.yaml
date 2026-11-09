@@ -1,0 +1,19 @@
+# @package callbacks
+
+# The default callbacks plus a checkpoint every five epochs, all kept, for the acquisition
+# curves of the seeded rows (probes per layer and checkpoint). The callbacks are not hashed, so
+# this changes no run's identity. Listed after model_checkpoint, which stays the
+# trainer.checkpoint_callback that the manifest reads.
+defaults:
+  - default
+  - _self_
+
+acquisition_checkpoint:
+  _target_: lightning.pytorch.callbacks.ModelCheckpoint
+  dirpath: ${paths.output_dir}/checkpoints/acquisition
+  filename: "epoch_{epoch:03d}"
+  monitor: null
+  save_top_k: -1
+  save_last: false
+  every_n_epochs: 5
+  auto_insert_metric_name: false

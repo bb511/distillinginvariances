@@ -25,7 +25,11 @@ tags: ["dev"]
 
 experiment_name: distilling_symmetries_dev
 
+# Names the trained run (it ends every student hp_tag), so a seeded checkpoint is found by it.
 seed: 12345
+# Fixes the probe draws for every checkpoint, whatever seed trained it, so the seeds of a
+# headline row are compared on the same g.x; coverage.yaml's seed must equal it.
+probe_seed: 12345
 
 # null: the main run; an integer in 1..data.n_folds: that fold (train.yaml).
 fold: null

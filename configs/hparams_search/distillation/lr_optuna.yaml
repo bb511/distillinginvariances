@@ -1,0 +1,19 @@
+# @package _global_
+
+# The learning rate of one distillation channel (kd, kd_hint or logit_matching) per cell and
+# regime, searched at the method defaults T = 4 and alpha = 0 with the rest of the recipe fixed:
+# the sibling's protocol (TPE, 20 start-up trials), which Block 3 of the registration (08_tests.md)
+# makes the selection rule for learning rates. 20 trials is the user's budget for a
+# one-dimensional search, so every trial is a start-up draw and the study is a seeded random
+# search over the log interval.
+defaults:
+  - /hparams_search/optuna
+
+hydra:
+  sweeper:
+    storage: sqlite:///logs/optuna/distillation.db?timeout=600
+    study_name: ${teacher}_${regime_tag}_${stage}
+    n_trials: 20
+
+    params:
+      algorithm.optimizer.lr: tag(log, interval(1e-4, 1e-2))

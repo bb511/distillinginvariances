@@ -1,0 +1,21 @@
+# @package _global_
+
+# Logit matching (Ba and Caruana 2014) on the cached logits: MSE(student, teacher) + alpha CE.
+defaults:
+  - override /algorithm: distillation
+
+stage: logit_matching
+hp_tag: a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}
+
+monitor: val/acc
+monitor_mode: max
+patience: 30
+
+trainer:
+  max_epochs: 200
+
+data:
+  teacher_cache: ${teacher_cache}
+
+algorithm:
+  objective: logit

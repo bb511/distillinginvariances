@@ -52,14 +52,18 @@ run_name: ${short_hash:${hydra:runtime.output_dir},12}
 
 # Upstream artefacts by convention: the teacher and the hint run of this cell at their default
 # learning rate, under the logs/<train_task> tree (debug/default.yaml points it at logs/debug).
+# Every student stage's hp_tag ends in the seed, so the seeds of a headline row train into
+# directories of their own, and a seeded stage warm-starts from the hint run of its own seed.
 train_task: train
 teacher_hp_tag: lr${teacher_lr}
-hint_hp_tag: lr${hint_lr}
-# The regime the teacher run and its cache come from: the augmented regime distils the
-# canonical teacher, whose outputs on a canonical row stand for any transform of it.
+hint_hp_tag: lr${hint_lr}_s${seed}
+# The regime the teacher cache comes from: the augmented regime distils the canonical teacher,
+# whose outputs on a canonical row stand for any transform of it.
 teacher_regime: ${regime_of_teacher:${data.regime}}
 teacher_regime_tag: ${regime_tag:${teacher_regime},${data.group}}
-teacher_run_dir: ${paths.log_dir}/${train_task}/${data.dataset}/${teacher}/${teacher_regime_tag}/teacher/${run_label}/${teacher_hp_tag}
+# The teacher run is the canonical one in every regime: one teacher per cell and fold serves
+# every regime (02_teachers.md), and its transformed cache is cut from that same checkpoint.
+teacher_run_dir: ${paths.log_dir}/${train_task}/${data.dataset}/${teacher}/canonical/teacher/${run_label}/${teacher_hp_tag}
 # The run's own regime: the augmented rows of E5 are baseline and KD only, so no augmented
 # stage reads a hint run.
 hint_run_dir: ${paths.log_dir}/${train_task}/${data.dataset}/${teacher}/${regime_tag}/hint/${run_label}/${hint_hp_tag}

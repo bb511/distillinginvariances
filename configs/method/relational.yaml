@@ -7,7 +7,7 @@ defaults:
   - override /algorithm: distillation
 
 stage: relational
-hp_tag: ${algorithm.discrepancy}_lis${algorithm.lambda_is}_lic${algorithm.lambda_ic}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}
+hp_tag: ${algorithm.discrepancy}_lis${algorithm.lambda_is}_lic${algorithm.lambda_ic}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}
 
 monitor: val/acc
 monitor_mode: max

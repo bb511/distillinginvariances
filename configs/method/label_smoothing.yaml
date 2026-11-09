@@ -1,0 +1,22 @@
+# @package _global_
+
+# The student trained on the labels smoothed by epsilon, with no teacher; epsilon is set on the
+# command line (algorithm.label_smoothing=0.05).
+defaults:
+  - override /algorithm: classifier
+
+stage: label_smoothing
+hp_tag: eps${algorithm.label_smoothing}_lr${algorithm.optimizer.lr}_s${seed}
+
+monitor: val/acc
+monitor_mode: max
+patience: 30
+
+trainer:
+  max_epochs: 200
+
+# Set here rather than in algorithm/classifier.yaml, so the teacher's and the baseline's
+# config_hash keep their value.
+algorithm:
+  net: ${student_net}
+  label_smoothing: 0.1

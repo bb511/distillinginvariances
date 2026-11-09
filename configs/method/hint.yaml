@@ -6,7 +6,7 @@ defaults:
   - override /algorithm: distillation
 
 stage: hint
-hp_tag: lr${algorithm.optimizer.lr}
+hp_tag: lr${algorithm.optimizer.lr}_s${seed}
 
 monitor: val/hint_mse
 monitor_mode: min

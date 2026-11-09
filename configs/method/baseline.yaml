@@ -5,7 +5,7 @@ defaults:
   - override /algorithm: classifier
 
 stage: baseline
-hp_tag: lr${algorithm.optimizer.lr}
+hp_tag: lr${algorithm.optimizer.lr}_s${seed}
 
 monitor: val/acc
 monitor_mode: max

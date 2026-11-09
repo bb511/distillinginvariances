@@ -1,4 +1,4 @@
-"""Distillation of a teacher into an MLP student, under the three objectives."""
+"""Distillation of a teacher into an MLP student, under the four objectives."""
 
 import torch
 import torch.nn.functional as F
@@ -9,9 +9,10 @@ from src.algorithms import BaseModule
 from src.algorithms.classifier import Classifier
 from src.algorithms.losses.hint import continued, hint_loss
 from src.algorithms.losses.kd import kd_loss
+from src.algorithms.losses.logit import logit_loss
 from src.algorithms.losses.relational import relational_loss
 
-OBJECTIVES = ("hint", "kd", "relational")
+OBJECTIVES = ("hint", "kd", "logit", "relational")
 
 
 class DistillationModule(BaseModule):
@@ -161,19 +162,25 @@ class DistillationModule(BaseModule):
     ) -> torch.Tensor:
         """The distillation term of the chosen objective, plus alpha times the cross
         entropy."""
-        if self.hparams.objective == "kd":
-            main = kd_loss(logits, t_logits, self.hparams.temperature)
-        else:
-            main = relational_loss(
-                logits,
-                t_logits,
-                self.hparams.discrepancy,
-                self.hparams.lambda_is,
-                self.hparams.lambda_ic,
-            )
+        main = self._distillation_term(logits, t_logits)
         if self.hparams.alpha > 0.0:
             main = main + self.hparams.alpha * F.cross_entropy(logits, y.argmax(dim=1))
         return main
+
+    def _distillation_term(
+        self, logits: torch.Tensor, t_logits: torch.Tensor
+    ) -> torch.Tensor:
+        if self.hparams.objective == "kd":
+            return kd_loss(logits, t_logits, self.hparams.temperature)
+        if self.hparams.objective == "logit":
+            return logit_loss(logits, t_logits)
+        return relational_loss(
+            logits,
+            t_logits,
+            self.hparams.discrepancy,
+            self.hparams.lambda_is,
+            self.hparams.lambda_ic,
+        )
 
     def _update_metrics(self, stage: str, out: dict[str, torch.Tensor]) -> None:
         """Add the hint objective's own monitor to the shared metrics."""

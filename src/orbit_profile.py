@@ -65,7 +65,9 @@ def profile(cfg: DictConfig) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def _subset(cfg: DictConfig, datamodule: LightningDataModule) -> torch.Tensor:
     x = datamodule.split(cfg.eval_split)[0]
-    order = torch.randperm(len(x), generator=torch.Generator().manual_seed(cfg.seed))
+    order = torch.randperm(
+        len(x), generator=torch.Generator().manual_seed(cfg.probe_seed)
+    )
     return x[order[: cfg.profile.n_samples]]
 
 
@@ -125,7 +127,7 @@ def _orbit(
     if exhaustive:
         return orbits.torus_orbit(x)
     layout = (datamodule.feature_names, datamodule.norm_scales)
-    with probe_rng((cfg.seed, cfg.eval_split), probe.tag, index, x.device):
+    with probe_rng((cfg.probe_seed, cfg.eval_split), probe.tag, index, x.device):
         draws = [
             apply_group(probe.group, x, *layout, **probe.kwargs)[0]
             for _ in range(probe.n_draws)
@@ -161,7 +163,7 @@ def _layer_rows(
     for index, (name, entry) in enumerate(store.items()):
         moments = np.concatenate(entry["moments"])
         stats = orbits.invariance_fraction(
-            moments, entry["draws"], exhaustive, cfg.profile.n_boot, cfg.seed
+            moments, entry["draws"], exhaustive, cfg.profile.n_boot, cfg.probe_seed
         )
         nv = orbits.normalised_variance(moments, entry["sums"]) if exhaustive else None
         cells = {"layer": name, "layer_index": index, "n_samples": len(moments)}

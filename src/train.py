@@ -43,7 +43,7 @@ from src.utils.checkpoints import (
 log = RankedLogger(__name__, rank_zero_only=True)
 
 # The stages fitted on the labels alone; every other stage reads the cell's teacher checkpoint.
-STAGES_WITHOUT_TEACHER = ("teacher", "baseline", "hgq")
+STAGES_WITHOUT_TEACHER = ("teacher", "baseline", "label_smoothing", "hgq")
 
 
 def _check_fold(cfg: DictConfig) -> None:
@@ -142,6 +142,15 @@ def _mlflow_run_id(trainer: Trainer) -> str | None:
     )
 
 
+def _best_score(trainer: Trainer, monitor: str) -> torch.Tensor | None:
+    """The monitored metric at the best epoch, that of the checkpoint the manifest
+    names; the last epoch's value when no checkpoint callback monitors it (debug
+    runs)."""
+    callback = getattr(trainer, "checkpoint_callback", None)
+    best = getattr(callback, "best_model_score", None)
+    return trainer.callback_metrics.get(monitor) if best is None else best
+
+
 def _write_manifest(cfg: DictConfig, trainer: Trainer, digest: str) -> None:
     """Record the checkpoint and the run for the stages and the evaluation
     downstream."""
@@ -152,7 +161,7 @@ def _write_manifest(cfg: DictConfig, trainer: Trainer, digest: str) -> None:
             f"{error} No manifest written, so nothing downstream can read this run."
         )
         return
-    best = trainer.callback_metrics.get(cfg.monitor)
+    best = _best_score(trainer, cfg.monitor)
     manifest = Manifest(
         stage=str(cfg.stage),
         fold=fold_value(cfg.fold),

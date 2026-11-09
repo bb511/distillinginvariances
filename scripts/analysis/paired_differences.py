@@ -35,9 +35,10 @@ PROBE = (
     "probe_max_shift",
     "probe_n_swaps",
 )
-# The two knobs a method shares with the method it is compared against (kd against hint at
-# one temperature, say); a baseline carries neither.
-SHARED_KNOBS = ("temperature", "alpha")
+# The knobs a method shares with the method it is compared against (kd against hint at one
+# temperature, say), or that split its own rows (label smoothing at each epsilon); a
+# baseline carries none.
+SHARED_KNOBS = ("temperature", "alpha", "label_smoothing")
 # The cell a pairing happens inside, the fold, the probe and the shared knobs.
 JOIN = ("dataset", "teacher", "regime", "fold", *PROBE, *SHARED_KNOBS)
 # What the pairs are reported per, the fold having been averaged out of them.

@@ -3,6 +3,7 @@ import torch.nn.functional as F
 
 from src.algorithms.losses.hint import continued, hint_loss
 from src.algorithms.losses.kd import kd_loss
+from src.algorithms.losses.logit import logit_loss
 from src.algorithms.losses.relational import discrepancy, edges, relational_loss
 
 
@@ -49,3 +50,13 @@ def test_the_relational_terms() -> None:
         relational_loss(student, teacher, "cosine", 2.0, 3.0), expected
     )
     assert relational_loss(student[:1], teacher[:1], "cosine") == 0.0
+
+
+def test_logit_matching_is_the_mean_squared_logit_difference() -> None:
+    student, teacher = _logits(6, 5, 10), _logits(6, 5, 11)
+
+    assert logit_loss(teacher, teacher) == 0.0
+    assert torch.allclose(logit_loss(student, teacher), F.mse_loss(student, teacher))
+    assert torch.allclose(
+        logit_loss(student, teacher), ((student - teacher) ** 2).mean()
+    )

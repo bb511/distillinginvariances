@@ -28,8 +28,8 @@ tags: ["dev"]
 experiment_name: distilling_symmetries_dev
 
 # The seed, the probe settings and batch_size_eval fix the draws (probe_rng in
-# src/metrics/evaluate.py): at eval.yaml's values, and on the same device type, the g.x are
-# those of the evaluation's dumps.
+# src/metrics/evaluate.py): at eval.yaml's probe_seed and values, and on the same device type,
+# the g.x are those of the evaluation's dumps.
 seed: 12345
 
 # null: the main run, whose validation rows train the classifier.

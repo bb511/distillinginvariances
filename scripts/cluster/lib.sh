@@ -45,16 +45,20 @@ field() {
         cut -d= -f2- || true
 }
 
-# The block's position in the study, '<experiment>_<regime>_<method>_fold<k>':
+# The block's position in the study, '<experiment>_<regime>_<method>_<run>[_s<seed>]',
+# <run> being 'main' for a block without a fold override and 'fold<k>' otherwise:
 # what --only matches on and what names the driver's logs.
 block_label() {
-    local exp regime method fold
+    local exp regime method fold seed run=main
     exp=$(field "$1" 'experiment')
     exp=${exp##*/}
     regime=$(field "$1" 'data\.regime')
     method=$(field "$1" 'method')
     fold=$(field "$1" 'fold')
-    printf "%s_%s_%s_fold%s" "$exp" "${regime:-canonical}" "${method:-teacher}" "${fold:-1}"
+    seed=$(field "$1" 'seed')
+    [ -z "$fold" ] || run="fold$fold"
+    printf "%s_%s_%s_%s%s" "$exp" "${regime:-canonical}" "${method:-teacher}" "$run" \
+        "${seed:+_s$seed}"
 }
 
 # $1 = 1-based index, $2 = name, matched against the caller's $only (comma-
@@ -99,9 +103,15 @@ expand_folds() {
 
 # $1 = command, $2 = fold. The run directory follows from the fold through the
 # config, so only the override itself and the fold_<k> component of the upstream
-# paths a block names (a manifest, a teacher cache) are rewritten.
+# paths a block names (a manifest, a teacher cache) are rewritten. A main-run block,
+# which carries no fold override, gains one; its upstream paths are written with
+# ${run_label}, which follows the fold by itself.
 substitute_fold() {
-    printf "%s" "$1" | sed -E "s/(^|[[:space:]])fold=[0-9]+/\\1fold=$2/g; s#fold_[0-9]+#fold_$2#g"
+    if printf "%s" "$1" | grep -qE "(^|[[:space:]])fold=[0-9]+"; then
+        printf "%s" "$1" | sed -E "s/(^|[[:space:]])fold=[0-9]+/\\1fold=$2/g; s#fold_[0-9]+#fold_$2#g"
+    else
+        printf "%s fold=%s" "$1" "$2"
+    fi
 }
 
 # Every command and every log directory is relative to the repository root.

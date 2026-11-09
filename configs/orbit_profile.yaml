@@ -25,7 +25,11 @@ tags: ["dev"]
 
 experiment_name: distilling_symmetries_dev
 
+# Names the trained run and seeds the untrained control's initialisation.
 seed: 12345
+# Fixes the subset, the probe draws and the bootstrap for every checkpoint, whatever seed
+# trained it.
+probe_seed: 12345
 
 # null: the main run; an integer in 1..data.n_folds: that fold (train.yaml).
 fold: null

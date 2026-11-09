@@ -10,7 +10,10 @@ tie, and a tie goes to the lower temperature, then the lower beta. A selected te
 at an end of the grid {1, ..., 16} whose next point (0.5 or 32) is absent is flagged in
 ``extend_with``; once that point exists the rule applies once more and flags nothing.
 The firmware student of a cell is the canonical-regime distilled row of highest score
-among the selected points.
+among the selected points. The label-smoothed students are a curve over epsilon,
+reported whole and never selected. Only a cell teacher's own grid, at the default seed, is
+ranked: the control teachers' rows, the variants (``variant``) and the extra seeds are
+trained at the selected point.
 
 python3 scripts/analysis/select_hparams.py python3 scripts/analysis/select_hparams.py
 --results results/results.csv --out results/hyperparameters.csv
@@ -27,7 +30,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from src.vocabulary import DATA_OF_REGIME, MAIN_FOLD  # noqa: E402
+from src.vocabulary import CONTROL_TEACHERS, DATA_OF_REGIME, MAIN_FOLD  # noqa: E402
 
 # One selection per arm the paper reports separately.
 KEY = ("dataset", "teacher", "regime", "method", "discrepancy", "alpha")
@@ -36,7 +39,12 @@ SCORE = "accuracy_macro"
 TIE = 0.001
 # The grid ends and the point each adds when selected (Block 3's edge rule).
 EDGES = {1.0: 0.5, 16.0: 32.0}
-NOT_DISTILLED = ("baseline", "teacher", "constant")
+# Label smoothing is reported at every epsilon, so it has no selected point.
+NOT_SELECTED = ("teacher", "constant", "label_smoothing")
+# The grid is trained at the default seed. The extra seeds of a headline row come after its
+# selection and give intervals, never a selection.
+SELECTION_SEED = "12345"
+NOT_DISTILLED = ("baseline", "teacher", "constant", "label_smoothing")
 # The knobs a catalogue substitutes into the fold commands, and their override names.
 OVERRIDE_OF = {
     "temperature": "algorithm.temperature",
@@ -47,12 +55,8 @@ OVERRIDE_OF = {
     "lambda_ic": "algorithm.lambda_ic",
     "lr": "algorithm.optimizer.lr",
 }
-EXPERIMENT_OF = {
-    "cnn_circular": "mnist_cnn",
-    "cnn_zeros": "mnist_cnn",
-    "deepsets": "jets_deepsets",
-    "lorentznet": "jets_lorentznet",
-}
+# The MNIST experiments, whose names are not <dataset>_<teacher>.
+EXPERIMENT_OF = {"cnn_circular": "mnist_cnn", "cnn_zeros": "mnist_cnn_zeros"}
 OUT_COLUMNS = (
     *KEY,
     "stage",
@@ -85,6 +89,17 @@ def _number(value: str, missing: float) -> float:
     return missing if math.isnan(number) else number
 
 
+def _grid_point(row: dict[str, str]) -> bool:
+    """A point of a cell teacher's own grid: neither a control teacher's row, nor a
+    variant (double width, four-momentum) run at the selected point, nor an extra
+    seed."""
+    return (
+        row["teacher"] not in CONTROL_TEACHERS
+        and not row.get("variant")
+        and (row.get("seed") or SELECTION_SEED) == SELECTION_SEED
+    )
+
+
 def _candidates(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     # One row per checkpoint: its own rows under its cell's probe. The other probe rows
     # repeat its scores, and another regime's rows are no validation of it.
@@ -93,9 +108,10 @@ def _candidates(rows: list[dict[str, str]]) -> list[dict[str, str]]:
         for row in rows
         if row["eval_split"] == "fold"
         and row["fold"] == MAIN_FOLD
-        and row["method"] not in ("teacher", "constant")
+        and row["method"] not in NOT_SELECTED
         and row["probe_group"] == row["group"]
         and row["eval_data"] == DATA_OF_REGIME[row["regime"]]
+        and _grid_point(row)
     ]
 
 
@@ -139,10 +155,15 @@ def _firmware(selected: list[dict[str, str]]) -> list[dict[str, str]]:
     return [cells[cell] for cell in sorted(cells)]
 
 
+def _experiment(row: dict[str, str]) -> str:
+    default = f"{row['dataset']}_{row['teacher']}"
+    return EXPERIMENT_OF.get(row["teacher"], default)
+
+
 def _overrides(row: dict[str, str]) -> str:
     """The command line that trains this point on another fold."""
     head = [
-        f"experiment={EXPERIMENT_OF.get(row['teacher'], row['teacher'])}",
+        f"experiment={_experiment(row)}",
         f"method={row['stage']}",
         f"data.regime={row['regime']}",
     ]

@@ -2,7 +2,8 @@ from src import vocabulary
 
 CONTRACT = (
     "dataset, teacher, regime, method, temperature, alpha, beta, discrepancy, lambda_is, "
-    "lambda_ic, lr, batch_size, epochs_run, seed, fold, n_folds, eval_split, eval_data, "
+    "lambda_ic, label_smoothing, lr, batch_size, epochs_run, seed, fold, n_folds, "
+    "eval_split, eval_data, "
     "probe_group, probe_eta_max, probe_max_shift, probe_n_swaps, accuracy, "
     "accuracy_macro, nll, ece, ece_bins, fid_top1, fid_sqrtjsd, fid_top1_g, "
     "fid_sqrtjsd_g, inv_top1, inv_sqrtjsd, inv_M, inv_top1_g, inv_sqrtjsd_g, "

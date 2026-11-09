@@ -93,7 +93,7 @@ def _collect(
     """Every layer at x and at g.x, the teacher's logits at both, the frame labels of g,
     the concepts of x and the labels, over the subset; float64 on the CPU."""
     x, y, _ = datamodule.split(cfg.eval_split)
-    generator = torch.Generator().manual_seed(cfg.seed)
+    generator = torch.Generator().manual_seed(cfg.probe_seed)
     order = torch.randperm(len(x), generator=generator)[: cfg.probing.n_samples]
     device = next(module.parameters()).device
     batches = order.split(cfg.probing.batch_size)
@@ -117,7 +117,7 @@ def _batch(
 ) -> dict[str, Any]:
     (module, teacher), x = models, x.float()
     layout = (datamodule.feature_names, datamodule.norm_scales)
-    with probe_rng((cfg.seed, cfg.eval_split), probe.tag, index, x.device):
+    with probe_rng((cfg.probe_seed, cfg.eval_split), probe.tag, index, x.device):
         x_t, params = apply_group(probe.group, x, *layout, **probe.kwargs)
     concepts = concept_labels(cfg.data.dataset, x, layout)
     parts = {"acts": layer_outputs(module, x), "acts_t": layer_outputs(module, x_t)}
@@ -162,7 +162,7 @@ def _scored(
     """Held-out R^2 of a ridge probe fitted on the rows before *cut*, with a percentile
     95 % interval from resampling the held-out rows."""
     predicted = ridge_predict(fit_probe(x[:cut], z[:cut]), x[cut:])
-    generator = torch.Generator().manual_seed(cfg.seed)
+    generator = torch.Generator().manual_seed(cfg.probe_seed)
     n = len(predicted)
     replicates = [
         float(r_squared(z[cut:][rows], predicted[rows]))
@@ -200,7 +200,7 @@ def _erasure(
     train, frames = data["acts_t"][name][:cut], data["frames"]
     eraser = leace(train, frames[:cut])
     effect = _effect(net, data, name, index, cut, eraser)
-    generator = torch.Generator().manual_seed(cfg.seed)
+    generator = torch.Generator().manual_seed(cfg.probe_seed)
     controls = [
         _effect(
             net,

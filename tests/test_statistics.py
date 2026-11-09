@@ -43,7 +43,8 @@ def test_the_transfer_fraction_reads_agreements_and_distances() -> None:
     assert math.isnan(transfer_fraction(0.4, 0.5, 0.5))
 
 
-BLANKS = ("temperature", "alpha", "beta", "discrepancy", "lambda_is", "lambda_ic", "lr")
+BLANKS = ("temperature", "alpha", "beta", "discrepancy", "lambda_is", "lambda_ic")
+BLANKS += ("label_smoothing", "lr")
 PROBE = ("probe_eta_max", "probe_max_shift", "probe_n_swaps")
 
 
@@ -117,3 +118,68 @@ def test_the_selection_ties_to_the_lower_temperature_and_flags_an_edge(
 
     assert (kd["temperature"], kd["extend_with"], kd["n_points"]) == ("1", "0.5", "4")
     assert pick["method"] == "kd"
+
+
+def test_the_selection_reports_label_smoothing_whole_and_names_every_experiment(
+    tmp_path: Path,
+) -> None:
+    keys = {"fold": "main", "eval_split": "fold", "regime": "canonical"}
+    rows = []
+    for dataset, teacher in (
+        ("jets", "lloca_z"),
+        ("top_tagging", "lorentznet"),
+        ("mnist", "cnn_circular"),
+        ("mnist", "cnn_zeros"),
+    ):
+        cell = _cell(teacher) | keys | {"dataset": dataset}
+        logit = {"method": "logit_matching", "stage": "logit_matching", "alpha": "0"}
+        rows.append(cell | logit | {"accuracy_macro": 0.8})
+        smoothed = {"method": "label_smoothing", "stage": "label_smoothing"}
+        rows += [
+            cell | smoothed | {"label_smoothing": eps, "accuracy_macro": 0.9}
+            for eps in ("0.05", "0.1", "0.2")
+        ]
+    firmware = tmp_path / "firmware.csv"
+
+    selected = _run("select_hparams", rows, tmp_path, "--firmware-out", str(firmware))
+    picks = list(csv.DictReader(firmware.open()))
+
+    assert {r["method"] for r in selected} == {"logit_matching"}
+    assert {r["method"] for r in picks} == {"logit_matching"} and len(picks) == 3
+    assert sorted(r["overrides"].split()[0] for r in selected) == [
+        "experiment=jets_lloca_z",
+        "experiment=mnist_cnn",
+        "experiment=top_tagging_lorentznet",
+    ]
+
+
+def test_the_selection_ranks_the_cell_grid_alone(tmp_path: Path) -> None:
+    keys = {"fold": "main", "eval_split": "fold", "regime": "canonical", "alpha": "0"}
+    kd = {"method": "kd", "stage": "kd", "temperature": "4", "variant": ""}
+    rows = [
+        _cell("lloca_z") | keys | kd | {"seed": "12345", "accuracy_macro": 0.80},
+        _cell("lloca_z")
+        | keys
+        | kd
+        | {"seed": "12345", "temperature": "8"}
+        | {"accuracy_macro": 0.70},
+        _cell("lloca_z")
+        | keys
+        | kd
+        | {"seed": "12346", "temperature": "8"}
+        | {"accuracy_macro": 0.95},
+        _cell("lloca_z")
+        | keys
+        | kd
+        | {"seed": "12345", "temperature": "8"}
+        | {"variant": "wide", "accuracy_macro": 0.99},
+        _cell("jetformer") | keys | kd | {"seed": "12345", "accuracy_macro": 0.99},
+    ]
+    firmware = tmp_path / "firmware.csv"
+
+    selected = _run("select_hparams", rows, tmp_path, "--firmware-out", str(firmware))
+    picks = list(csv.DictReader(firmware.open()))
+
+    assert [(r["teacher"], r["temperature"]) for r in selected] == [("lloca_z", "4")]
+    assert [r["teacher"] for r in picks] == ["lloca_z"]
+    assert selected[0]["n_points"] == "2"

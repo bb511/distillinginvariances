@@ -46,7 +46,7 @@ PROBE = (
 CELL = ("dataset", "teacher", *PROBE)
 # What a row of the output is per, the fold averaged out.
 ARM = ("dataset", "teacher", "regime", "method", "temperature", "alpha", "beta")
-ARM += ("discrepancy", "eval_split", *PROBE)
+ARM += ("discrepancy", "label_smoothing", "eval_split", *PROBE)
 STATS = ("mean", "ci_low", "ci_high")
 OUT_COLUMNS = (
     *ARM,

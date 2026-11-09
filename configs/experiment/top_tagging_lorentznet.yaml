@@ -1,11 +1,11 @@
 # @package _global_
 
 # The top-tagging set at 100 constituents under isotropic Lorentz boosts, with the sibling's
-# LorentzNet as the teacher. Student I and Distillation I set the top-tagging student; the
-# student keys stay at the study's defaults until then.
+# LorentzNet as the teacher and the [pt, eta, phi] student of 100 constituents.
 defaults:
   - override /data: top_tagging
   - override /net@teacher_net: lorentznet
+  - override /net@student_net: mlp_top
   - override /trainer: gpu
 
 teacher: lorentznet
@@ -16,8 +16,11 @@ input_shape: [100, 10]
 tags: ["top_tagging", "lorentznet", "lorentz_iso"]
 experiment_name: distilling_symmetries_top_tagging_lorentznet
 
+# The students' batch, that of the jets cells. The teacher was imported before the student keys
+# took these values, so it is read by its run directory and never retrained.
 data:
   group: lorentz_iso
+  batch_size: 1024
 
 # The architecture and recipe of the sibling's row (jet_tagging_gdl,
 # top_tagging/lorentznet/nconst100/baseline), read from its checkpoints and its runs'
@@ -51,6 +54,8 @@ top_tagging_lorentznet_scheduler:
   interval: step
   frequency: 1
 teacher_scheduler: ${top_tagging_lorentznet_scheduler}
+hint_lr: 1.0e-3
+relational_batch_size: 1024
 
 extras:
   matmul_precision: highest

@@ -1,4 +1,5 @@
-# A student trained against the cached teacher: hint, KD or relational, selected by objective.
+# A student trained against the cached teacher: hint, KD, logit matching or relational, selected
+# by objective.
 _target_: src.algorithms.distillation.DistillationModule
 
 _recursive_: false
@@ -16,7 +17,7 @@ teacher_ckpt: ${teacher_ckpt}
 # The hint run's checkpoint, for the stages that continue from it.
 warm_start_ckpt: null
 
-# hint | kd | relational, set by the method config.
+# hint | kd | logit | relational, set by the method config.
 objective: kd
 
 # The second hidden layer of every student.

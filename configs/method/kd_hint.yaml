@@ -6,7 +6,7 @@ defaults:
   - override /algorithm: distillation
 
 stage: kd_hint
-hp_tag: T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}
+hp_tag: T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}
 
 monitor: val/acc
 monitor_mode: max
