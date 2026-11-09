@@ -29,6 +29,7 @@ EXPERIMENTS = (
     "mnist_cnn_zeros",
     "jets_deepsets",
     "jets_lorentznet",
+    "jets_lorentznet_m2",
     "jets_mlp",
     "jets_lloca_z",
     "jets_lloca_so3",

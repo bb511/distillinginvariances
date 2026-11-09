@@ -1,0 +1,21 @@
+# @package _global_
+
+# A distilled student trained quantisation-aware with HGQ2 under its own KD objective, from its
+# float checkpoint (route b, user, 9 Nov 2026): T^2 KL(teacher || student) plus alpha times the
+# cross entropy, the teacher's logits from the cell's cache, on the recipe of method=hgq. The
+# Hint row continues from its kd_hint checkpoint, which is KD as well; the relational rows have
+# no quantised twin.
+defaults:
+  - hgq
+  - _self_
+
+stage: hgq_kd
+hp_tag: T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.scheduler.initial_learning_rate}
+
+data:
+  teacher_cache: ${teacher_cache}
+
+# The distilled row's own temperature and alpha are passed with its init_from.
+algorithm:
+  temperature: 4.0
+  alpha: 0.0

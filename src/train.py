@@ -42,8 +42,9 @@ from src.utils.checkpoints import (
 
 log = RankedLogger(__name__, rank_zero_only=True)
 
-# The stages fitted on the labels alone; every other stage reads the cell's teacher checkpoint.
-STAGES_WITHOUT_TEACHER = ("teacher", "baseline", "label_smoothing", "hgq")
+# The stages that load no teacher checkpoint: fitted on the labels, or for hgq_kd on the cached
+# teacher logits alone; every other stage reads the cell's teacher checkpoint.
+STAGES_WITHOUT_TEACHER = ("teacher", "baseline", "label_smoothing", "hgq", "hgq_kd")
 
 
 def _check_fold(cfg: DictConfig) -> None:

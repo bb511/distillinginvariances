@@ -1,0 +1,15 @@
+# @package _global_
+
+# The top-tagging LorentzNet with the node scalar read from the stored m2 column, as in
+# jets_lorentznet_m2; everything else, the student keys included, is top_tagging_lorentznet's.
+# Import-only, like it.
+defaults:
+  - top_tagging_lorentznet
+  - _self_
+
+teacher: lorentznet_m2
+teacher_net:
+  node_scalar: stored
+
+tags: ["top_tagging", "lorentznet_m2", "lorentz_iso"]
+experiment_name: distilling_symmetries_top_tagging_lorentznet_m2

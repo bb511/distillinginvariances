@@ -29,6 +29,10 @@ data:
 # stopped early after 100 epochs without improvement; those settings stay this study's own,
 # since trainer settings reach every student of the cell. Batch 1024 takes about 22 GB at 50
 # constituents.
+# The sibling's network as imported, node scalar computed from the inputs; the stored-mass
+# teacher of the cell (user, 9 Nov 2026) is jets_lorentznet_m2, which inherits this file.
+teacher_net:
+  node_scalar: computed
 teacher_lr: 0.0016106992417331738
 teacher_batch_size: 1024
 teacher_scheduler:

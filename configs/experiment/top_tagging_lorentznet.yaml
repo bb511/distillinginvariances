@@ -33,6 +33,8 @@ data:
 teacher_net:
   c_weight: 0.005
   dropout: 0.2
+  # The sibling's network as imported; the stored-mass teacher is top_tagging_lorentznet_m2.
+  node_scalar: computed
 teacher_lr: 0.001
 teacher_batch_size: 128
 teacher_optimizer:

@@ -258,3 +258,15 @@ def test_the_cache_refuses_the_augmented_regime_before_loading_anything(
 
     with pytest.raises(ValueError, match="data.regime=canonical"):
         cache_teacher(cfg)
+
+
+def test_the_stored_mass_lorentznet_differs_only_by_its_scalar() -> None:
+    sibling = compose_root("train.yaml", "experiment=jets_lorentznet")
+    stored = compose_root("train.yaml", "experiment=jets_lorentznet_m2")
+
+    assert sibling.teacher_net.node_scalar == "computed"
+    assert stored.teacher_net.node_scalar == "stored"
+    assert (sibling.teacher, stored.teacher) == ("lorentznet", "lorentznet_m2")
+    assert stored.student_net == sibling.student_net
+    assert stored.data.batch_size == sibling.data.batch_size
+    assert stored.teacher_lr == sibling.teacher_lr

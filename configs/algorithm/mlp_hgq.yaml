@@ -23,13 +23,17 @@ quantisation:
   weight_bits: 8 # bits of every weight and bias of a copy
   float_mode: false # every quantiser the identity, for the comparison with the float student
 
-# The recipe of the published JEDI-linear (jet_tagging_gdl), a placeholder until the students
-# are selected.
+# null trains on the labels; a temperature trains under the KD objective (method=hgq_kd), the
+# teacher's logits from the cell's cache, plus alpha times the cross entropy.
+temperature: null
+alpha: 0.0
+
+# The recipe of the synthesised designs (user, 9 Nov 2026): 1000 epochs from the float
+# checkpoint, beta rising geometrically from 1e-8 to 1e-6 over the run.
 beta: null # the EBOPs weight follows beta_schedule
 beta_schedule: # [epoch, beta, interpolation] points of HGQ2's PieceWiseSchedule
-  - [0, 2.0e-8, linear]
-  - [2000, 3.0e-7, log]
-  - [7000, 3.0e-6, constant]
+  - [0, 1.0e-8, log]
+  - [1000, 1.0e-6, constant]
 floatx: float64 # reproduces the fixed-point arithmetic exactly
 jax_platform: ${trainer.accelerator}
 jax_devices: ${trainer.devices}

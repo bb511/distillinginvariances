@@ -1,0 +1,15 @@
+# @package _global_
+
+# The LorentzNet cell's teacher (user, 9 Nov 2026): the sibling's checkpoints with the node
+# scalar read from the stored m2 column, which no transform changes, a stated departure from
+# the sibling. Everything else, the student keys included, is jets_lorentznet's.
+defaults:
+  - jets_lorentznet
+  - _self_
+
+teacher: lorentznet_m2
+teacher_net:
+  node_scalar: stored
+
+tags: ["jets", "lorentznet_m2", "lorentz_iso"]
+experiment_name: distilling_symmetries_jets_lorentznet_m2

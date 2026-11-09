@@ -32,7 +32,7 @@
 # [folds]: --folds 1-5, every point of the T and beta grids included (user, 9 Nov 2026).
 #
 # Placeholders: the tokens of runlloca_z_train.sh, replaced by the same strings, and
-#   TODO_LR_STUDENT   the learning rate the teacher-free rows trained at, that of
+#   TODO_LR_STUDENT_ETA   the learning rate the teacher-free rows trained at, that of
 #                     student/jets_pt_eta_phi as its hp_tag spells it: the blocks 7-15 run
 #                     under jets_lloca_z, whose own algorithm.optimizer.lr need not equal
 #                     it, and the manifest path interpolates it.
@@ -77,60 +77,60 @@
 
 # 7. baseline  canonical  [seeds] [folds]
 # python3 src/eval.py experiment=jets_lloca_z method=baseline data.regime=canonical \
-#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
+#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT_ETA 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 8. baseline  transformed  [seeds] [folds]
 # python3 src/eval.py experiment=jets_lloca_z method=baseline data.regime=transformed \
-#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
+#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT_ETA 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 9. label_smoothing  canonical  epsilon curve  [folds]
 # python3 src/eval.py -m experiment=jets_lloca_z method=label_smoothing data.regime=canonical \
-#     data.group=z algorithm.label_smoothing=0.05,0.1,0.2 algorithm.optimizer.lr=TODO_LR_STUDENT \
+#     data.group=z algorithm.label_smoothing=0.05,0.1,0.2 algorithm.optimizer.lr=TODO_LR_STUDENT_ETA \
 #     'hp_tag=abs_eps${algorithm.label_smoothing}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 10. label_smoothing  transformed  epsilon curve  [folds]
 # python3 src/eval.py -m experiment=jets_lloca_z method=label_smoothing data.regime=transformed \
-#     data.group=z algorithm.label_smoothing=0.05,0.1,0.2 algorithm.optimizer.lr=TODO_LR_STUDENT \
+#     data.group=z algorithm.label_smoothing=0.05,0.1,0.2 algorithm.optimizer.lr=TODO_LR_STUDENT_ETA \
 #     'hp_tag=abs_eps${algorithm.label_smoothing}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 11. baseline  augmented, on the transformed rows  [seeds] [folds]
 # python3 src/eval.py experiment=jets_lloca_z method=baseline data.regime=augmented \
-#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
+#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT_ETA 'hp_tag=abs_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 12. double width: baseline  canonical  [folds]
 # python3 src/eval.py experiment=jets_lloca_z method=baseline data.regime=canonical \
-#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT variant=wide net@student_net=mlp_jets_abs_wide \
+#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT_ETA variant=wide net@student_net=mlp_jets_abs_wide \
 #     'hp_tag=abs_wide_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 13. double width: baseline  transformed  [folds]
 # python3 src/eval.py experiment=jets_lloca_z method=baseline data.regime=transformed \
-#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT variant=wide net@student_net=mlp_jets_abs_wide \
+#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT_ETA variant=wide net@student_net=mlp_jets_abs_wide \
 #     'hp_tag=abs_wide_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 14. four-momentum: baseline  canonical  [folds]
 # python3 src/eval.py experiment=jets_lloca_z method=baseline data.regime=canonical \
-#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT variant=p4 net@student_net=mlp_jets_p4 \
+#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT_ETA variant=p4 net@student_net=mlp_jets_p4 \
 #     'hp_tag=p4_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 15. four-momentum: baseline  transformed  [folds]
 # python3 src/eval.py experiment=jets_lloca_z method=baseline data.regime=transformed \
-#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT variant=p4 net@student_net=mlp_jets_p4 \
+#     data.group=z algorithm.optimizer.lr=TODO_LR_STUDENT_ETA variant=p4 net@student_net=mlp_jets_p4 \
 #     'hp_tag=p4_lr${algorithm.optimizer.lr}_s${seed}' \
 #     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]

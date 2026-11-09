@@ -3,10 +3,11 @@
 _target_: src.algorithms.components.cnn.CNNInvariant
 input_channels: 1
 # The last width is that of the pooled vector rho reads, which is also the hint.
-phi_channels: [32, 64, 64]
+# The searched recipe (trial 192 of cnn_circular_canonical, see experiment/mnist_cnn.yaml).
+phi_channels: [32, 64, 64, 64]
 rho_layers: [128]
 output_dim: ${num_classes}
 activation: relu
-kernel_size: 3
+kernel_size: 5
 # E1 flips this to zeros for a teacher whose invariance is only approximate.
 padding_mode: circular

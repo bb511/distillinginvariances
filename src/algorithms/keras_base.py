@@ -23,6 +23,7 @@ from src.algorithms.components.hgq_port import (
     Quantisation,
     calibrate,
     configure_jax,
+    distillation_loss,
     export_port,
     quantiser_variables,
     require_cpu_jax,
@@ -79,6 +80,11 @@ class KerasQuantisedModule(Classifier):
     :param jax_platform: Lightning's accelerator, on which JAX trains; ``trace`` and
         ``export`` need ``cpu``.
     :param jax_devices: Lightning's devices.
+    :param temperature: None trains on the labels; a temperature trains under the
+        distillation objective of ``DistillationModule``'s KD, the teacher's logits read
+        from the batches of a datamodule with a teacher cache (route b, user, 9 Nov
+        2026).
+    :param alpha: the weight of the cross entropy beside the KD term.
     """
 
     def __init__(
@@ -96,6 +102,8 @@ class KerasQuantisedModule(Classifier):
         floatx: str = "float64",
         jax_platform: str = "cpu",
         jax_devices: int | list[int] = 1,
+        temperature: float | None = None,
+        alpha: float = 0.0,
     ) -> None:
         super().__init__(net, num_classes, input_shape, optimizer, scheduler)
         configure_jax(jax_platform, jax_devices, floatx)
@@ -119,10 +127,28 @@ class KerasQuantisedModule(Classifier):
             f"{type(self).__name__} must implement _copy_float_network()."
         )
 
-    def _keras_loss(self) -> keras.losses.Loss:
-        """The objective of the Keras step, and the one place to change it: the cross
-        entropy of the logits and the one-hot labels."""
-        return keras.losses.CategoricalCrossentropy(from_logits=True)
+    def _keras_loss(self):
+        """The objective of the Keras step: the cross entropy of the logits and the one-
+        hot labels, or, given a temperature, the KD objective."""
+        if self.hparams.temperature is None:
+            return keras.losses.CategoricalCrossentropy(from_logits=True)
+        hp = self.hparams
+        return distillation_loss(hp.num_classes, hp.temperature, hp.alpha)
+
+    def _keras_targets(self, batch: tuple[torch.Tensor, ...], dtype) -> np.ndarray:
+        """The one-hot labels (batch, classes), followed under distillation by the
+        cached teacher logits, the third element of the batch.
+
+        :raises ValueError: when distilling from batches without a teacher cache.
+        """
+        targets = batch[1]
+        if self.hparams.temperature is not None:
+            if len(batch) < 3:
+                raise ValueError(
+                    "Distilling needs the teacher cache: set data.teacher_cache."
+                )
+            targets = torch.cat([targets, batch[2].to(targets.dtype)], dim=1)
+        return targets.cpu().numpy().astype(dtype)
 
     def _keras_inputs(self, x: torch.Tensor) -> np.ndarray:
         """The (rows, in_dim) rows the port reads of a batch or a whole split at the
@@ -170,7 +196,7 @@ class KerasQuantisedModule(Classifier):
         optimizer = instantiate(self.hparams.optimizer)(**self._learning_rate())
         variables = quantiser_variables(self.net.keras_model)
         optimizer.exclude_from_weight_decay(var_list=variables)
-        self.net.compile_keras(optimizer, self._keras_loss())
+        self.net.compile_keras(optimizer, self._keras_loss(), self.hparams.num_classes)
         return None
 
     def _learning_rate(self) -> dict[str, Any]:
@@ -184,9 +210,9 @@ class KerasQuantisedModule(Classifier):
     def training_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> None:
         """One Keras step, logging the epoch means of the cross entropy, of Keras's
         (micro) accuracy and of the loss with the EBOPs and bit penalties."""
-        x, y = batch[0], batch[1]
+        x = batch[0]
         rows = self._keras_inputs(x)
-        logs = self.net.train_on_batch(rows, y.cpu().numpy().astype(rows.dtype))
+        logs = self.net.train_on_batch(rows, self._keras_targets(batch, rows.dtype))
         # The mock optimiser's step does nothing but advance global_step.
         self.optimizers().step()
         # Keras resets its metrics at every train_on_batch, so acc is the batch's own.

@@ -7,8 +7,8 @@
 # margin and of the transfer fraction), under student/mnist, whose teacher is none, so that
 # they train once in mnist/none/... and the MNIST cell evaluates them (the TEACHER-FREE ROWS
 # of runcnn_eval.sh). Canonical once, transformed and augmented under translation. The
-# student's learning rate and weight decay are those of student/mnist, filled in once
-# Student I has selected the student.
+# student's learning rate and weight decay are the tokens TODO_LR_STUDENT_MNIST and
+# TODO_WD_MNIST, those of Student I's selected student, replaced once it is chosen.
 #
 # Every block is a main-run command at seed 12345 with a checkpoint every 5 epochs
 # (callbacks=acquisition), independent of every other: these rows can run at any time.
@@ -25,23 +25,23 @@
 # scripts/cluster/submit.sh (olgpu) or submit_ngt.sh (a pod).
 
 # 1. baseline  canonical  [seeds] [folds]
-# python3 src/train.py experiment=student/mnist method=baseline data.regime=canonical \
+# python3 src/train.py experiment=student/mnist method=baseline algorithm.optimizer.weight_decay=TODO_WD_MNIST algorithm.optimizer.lr=TODO_LR_STUDENT_MNIST data.regime=canonical \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 2. baseline  transformed translation  [seeds] [folds]
-# python3 src/train.py experiment=student/mnist method=baseline data.regime=transformed \
+# python3 src/train.py experiment=student/mnist method=baseline algorithm.optimizer.weight_decay=TODO_WD_MNIST algorithm.optimizer.lr=TODO_LR_STUDENT_MNIST data.regime=transformed \
 #     data.group=translation logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 3. label_smoothing  canonical  epsilon curve  [folds]
-# python3 src/train.py -m experiment=student/mnist method=label_smoothing data.regime=canonical \
+# python3 src/train.py -m experiment=student/mnist method=label_smoothing algorithm.optimizer.weight_decay=TODO_WD_MNIST algorithm.optimizer.lr=TODO_LR_STUDENT_MNIST data.regime=canonical \
 #     algorithm.label_smoothing=0.05,0.1,0.2 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 4. label_smoothing  transformed translation  epsilon curve  [folds]
-# python3 src/train.py -m experiment=student/mnist method=label_smoothing data.regime=transformed \
+# python3 src/train.py -m experiment=student/mnist method=label_smoothing algorithm.optimizer.weight_decay=TODO_WD_MNIST algorithm.optimizer.lr=TODO_LR_STUDENT_MNIST data.regime=transformed \
 #     data.group=translation algorithm.label_smoothing=0.05,0.1,0.2 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 5. baseline  augmented translation  [seeds] [folds]
-# python3 src/train.py experiment=student/mnist method=baseline data.regime=augmented \
+# python3 src/train.py experiment=student/mnist method=baseline algorithm.optimizer.weight_decay=TODO_WD_MNIST algorithm.optimizer.lr=TODO_LR_STUDENT_MNIST data.regime=augmented \
 #     data.group=translation logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition

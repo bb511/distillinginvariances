@@ -205,3 +205,52 @@ def test_synthesis_emulates_the_export_bit_for_bit(tmp_path: Path) -> None:
     assert status == 0 and check["project"] == "mlp_hgq"
     assert check["n_mismatch"] == check["n_mismatch_keras"] == 0
     assert (out / "synthesis.csv").is_file()
+
+
+def test_the_keras_kd_objective_is_the_torch_one() -> None:
+    from src.algorithms.components.hgq_port import distillation_loss
+    from src.algorithms.losses.kd import kd_loss
+
+    generator = torch.Generator().manual_seed(3)
+    logits, teacher = (torch.randn(8, 3, generator=generator).double() for _ in "ab")
+    labels = torch.eye(3, dtype=torch.float64)[torch.arange(8) % 3]
+    targets = torch.cat([labels, teacher], dim=1)
+
+    keras_loss = distillation_loss(3, 4.0, 0.5)(targets.numpy(), logits.numpy())
+    torch_loss = kd_loss(logits, teacher, 4.0)
+    torch_loss = torch_loss + 0.5 * torch.nn.functional.cross_entropy(
+        logits, labels.argmax(1)
+    )
+
+    assert float(np.mean(_array(keras_loss))) == pytest.approx(
+        float(torch_loss), rel=1e-10
+    )
+
+
+def test_a_distilled_port_steps_on_the_cached_teacher_logits(tmp_path: Path) -> None:
+    module, datamodule = _bound(tmp_path, temperature=4.0, alpha=1.0)
+    x, y, _ = datamodule.split("train")
+    teacher = torch.randn(len(x), 3)
+    rows = module._keras_inputs(x)
+
+    targets = module._keras_targets((x, y, teacher, teacher), rows.dtype)
+    module.configure_optimizers()
+    logs = module.net.train_on_batch(rows, targets)
+
+    assert targets.shape == (len(x), 6)
+    assert all(np.isfinite(logs[key]) for key in ("loss", "ce", "acc"))
+    with pytest.raises(ValueError, match="teacher cache"):
+        module._keras_targets((x, y), rows.dtype)
+
+
+def test_the_distilled_quantised_stage_composes_on_the_recipe() -> None:
+    from tests.conftest import compose_root
+
+    cfg = compose_root("train.yaml", "experiment=jets_deepsets", "method=hgq_kd")
+
+    assert cfg.stage == "hgq_kd" and cfg.algorithm.temperature == 4.0
+    assert cfg.data.teacher_cache.endswith("main.npz")
+    assert cfg.trainer.max_epochs == 1000 and cfg.data.batch_size == 1024
+    assert cfg.callbacks.model_checkpoint.every_n_epochs == 10
+    assert cfg.callbacks.model_checkpoint.save_top_k == -1
+    assert list(cfg.algorithm.beta_schedule[-1]) == [1000, 1.0e-6, "constant"]

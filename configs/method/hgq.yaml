@@ -1,8 +1,9 @@
 # @package _global_
 
-# The cell's student trained quantisation-aware with HGQ2 on the labels, from scratch or from a
-# float checkpoint (algorithm.init_from), for synthesis by alkaid. A run from a float checkpoint
-# sets its own hp_tag, since the run directory would otherwise be that of the run from scratch.
+# The cell's student trained quantisation-aware with HGQ2 on the labels, for synthesis by alkaid.
+# The synthesised designs start from their float checkpoint (algorithm.init_from, user,
+# 9 Nov 2026) and set their own hp_tag, since the run directory would otherwise be that of the
+# run from scratch.
 defaults:
   - override /algorithm: mlp_hgq
 
@@ -12,27 +13,31 @@ hp_tag: lr${algorithm.scheduler.initial_learning_rate}
 monitor: val/acc
 monitor_mode: max
 
-# JEDI-linear's epochs (jet_tagging_gdl), a placeholder until the students are selected.
+# The recipe of the synthesised designs (user, 9 Nov 2026): 1000 epochs at the students' batch.
 trainer:
-  max_epochs: 7000
+  max_epochs: 1000
   # 16-mixed would put a gradient scaler on the mock optimiser's step, and manual
   # optimisation admits no clipping, which jets_lorentznet sets.
   precision: 32
   gradient_clip_val: null
 
 data:
-  batch_size: 2790
+  batch_size: 1024
   # In the main process: forked loader workers do not mix with the threads JAX has started.
   num_workers: 0
   pin_memory: false
 
-# The last epoch is kept and nothing stops early. Under the beta schedule val/acc falls by design
-# as the EBOPs fall, and it is measured on the integer bits traced on the last training batch,
-# past which some validation rows wrap, so ranking by it would keep the widest port. The learning
-# rate monitor reads a torch optimiser; train/lr carries Keras's rate.
+# A checkpoint every 10 epochs, all kept: a design that misses 100 ns takes the epoch of its
+# EBOPs front with the highest validation accuracy that meets it (03_student.md, 9 Nov 2026).
+# Nothing stops early: under the beta schedule val/acc falls by design as the EBOPs fall, and it
+# is measured on the integer bits traced on the last training batch, past which some validation
+# rows wrap. The learning rate monitor reads a torch optimiser; train/lr carries Keras's rate.
 callbacks:
   model_checkpoint:
-    monitor: null # each epoch's file replaces the last, so best_model_path is the last epoch
+    monitor: null # every saved epoch is kept, so best_model_path is the last one
+    filename: "epoch_{epoch:04d}"
+    every_n_epochs: 10
+    save_top_k: -1
     save_last: false
   early_stopping: null
   lr_monitor: null

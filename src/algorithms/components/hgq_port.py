@@ -134,6 +134,42 @@ class Quantisation:
         return {key: QuantizerConfig("dummy", place) for key, place in places.items()}
 
 
+def _cross_entropy(labels, logits):
+    return keras.losses.categorical_crossentropy(labels, logits, from_logits=True)
+
+
+def _accuracy(labels, logits):
+    return keras.metrics.categorical_accuracy(labels, logits)
+
+
+def _labels_of(metric, classes: int):
+    """*metric* of the targets' first *classes* columns, the one-hot labels."""
+
+    def fn(targets, logits):
+        return metric(targets[:, :classes], logits)
+
+    return fn
+
+
+def distillation_loss(classes: int, temperature: float, alpha: float):
+    """The Keras twin of ``DistillationModule``'s KD objective, T^2 KL(p_T || p_S) plus
+    alpha times the cross entropy, both averaged over the batch.
+
+    The targets are (batch, 2 classes): the one-hot labels, then the teacher's logits.
+    The KL takes 0 log 0 as 0, as torch's ``kl_div`` does.
+    """
+
+    def loss(targets, logits):
+        labels, teacher = targets[:, :classes], targets[:, classes:]
+        log_p = ops.log_softmax(logits / temperature, axis=-1)
+        q = ops.softmax(teacher / temperature, axis=-1)
+        log_q = ops.log(ops.where(q > 0, q, 1.0))
+        kl = ops.sum(q * (log_q - log_p), axis=-1) * temperature**2
+        return kl + alpha * _cross_entropy(labels, logits)
+
+    return loss
+
+
 class KerasNetwork(FeatureNet):
     """The Keras port behind the interface of the float network it replaces.
 
@@ -176,16 +212,20 @@ class KerasNetwork(FeatureNet):
         return np.asarray(words)
 
     def compile_keras(
-        self, optimizer: keras.optimizers.Optimizer, loss: keras.losses.Loss
+        self, optimizer: keras.optimizers.Optimizer, loss, classes: int
     ) -> None:
-        """Compile with *loss* of the logits and the one-hot labels; the layers add beta
-        times their EBOPs and the L1 penalties on their bits.
+        """Compile with *loss* of the targets and the logits; the layers add beta times
+        their EBOPs and the L1 penalties on their bits.
 
+        The targets are the one-hot labels, followed under distillation by the teacher's
+        logits, so the metrics read their first *classes* columns alone.
         ``train_on_batch`` then reports ``loss`` (the total), ``ce`` and ``acc``.
         """
         metrics = [
-            keras.metrics.CategoricalCrossentropy(from_logits=True, name="ce"),
-            keras.metrics.CategoricalAccuracy(name="acc"),
+            keras.metrics.MeanMetricWrapper(
+                _labels_of(_cross_entropy, classes), name="ce"
+            ),
+            keras.metrics.MeanMetricWrapper(_labels_of(_accuracy, classes), name="acc"),
         ]
         self.keras_model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 

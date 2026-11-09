@@ -8,6 +8,8 @@ TEACHERS = (
     "cnn_zeros",
     "deepsets",
     "lorentznet",
+    # The LorentzNet cell's teacher: lorentznet's weights, the node scalar from stored m2.
+    "lorentznet_m2",
     "lloca_z",
     "lloca_so3",
     "lloca_lorentz",

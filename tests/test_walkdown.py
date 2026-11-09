@@ -98,3 +98,19 @@ def test_staging_copies_what_another_pod_walks_down(tmp_path: Path) -> None:
     assert staged == tmp_path / "shared" / "student_jets_abs_s1234" / "3"
     assert walkdown.float_checkpoint(staged).read_bytes() == b"weights"
     assert total == len(b"weights") + len("\n".join(overrides) + "\n")
+
+
+def test_the_front_pick_takes_the_most_accurate_epoch_within_the_budget() -> None:
+    path = ROOT / "scripts" / "synthesis" / "front_pick.py"
+    spec = importlib.util.spec_from_file_location("front_pick", path)
+    front = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(front)
+    rows = [
+        {"epoch": "epoch_0010", "accuracy": 0.80, "ebops": 900, "latency_ns": 120.0},
+        {"epoch": "epoch_0020", "accuracy": 0.78, "ebops": 700, "latency_ns": 95.0},
+        {"epoch": "epoch_0030", "accuracy": 0.78, "ebops": 600, "latency_ns": 90.0},
+        {"epoch": "epoch_0040", "accuracy": 0.70, "ebops": 300, "latency_ns": 60.0},
+    ]
+
+    assert front.pick(rows, 100.0)["epoch"] == "epoch_0030"
+    assert front.pick(rows, 50.0) is None
