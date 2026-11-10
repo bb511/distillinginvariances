@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from tests.conftest import ROOT, compose_root
@@ -114,3 +115,71 @@ def test_the_front_pick_takes_the_most_accurate_epoch_within_the_budget() -> Non
 
     assert front.pick(rows, 100.0)["epoch"] == "epoch_0030"
     assert front.pick(rows, 50.0) is None
+
+
+def _front_pick():
+    path = ROOT / "scripts" / "synthesis" / "front_pick.py"
+    spec = importlib.util.spec_from_file_location("front_pick", path)
+    front = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(front)
+    return front
+
+
+def test_the_matched_pick_takes_the_most_accurate_epoch_at_the_target() -> None:
+    front = _front_pick()
+    rows = [
+        {"epoch": "epoch_0100", "accuracy_macro": 0.90, "ebops": 200},
+        {"epoch": "epoch_0200", "accuracy_macro": 0.80, "ebops": 120},
+        {"epoch": "epoch_0300", "accuracy_macro": 0.80, "ebops": 110},
+        {"epoch": "epoch_0400", "accuracy_macro": 0.79, "ebops": 100},
+        {"epoch": "epoch_0500", "accuracy_macro": 0.70, "ebops": 90},
+    ]
+    latency = {"epoch_0300": 120.0}
+    estimated = []
+
+    def estimate(row: dict) -> dict:
+        estimated.append(row["epoch"])
+        return row | {"latency_ns": latency.get(row["epoch"], 60.0)}
+
+    def chosen(max_ebops: int, skip: set[str]) -> str | None:
+        found = front.matched_front(rows, max_ebops, 100.0, estimate, skip)[1]
+        return None if found is None else found["epoch"]
+
+    assert chosen(120, set()) == "epoch_0200"
+    assert chosen(115, set()) == "epoch_0400"
+    assert chosen(115, {"epoch_0400"}) == "epoch_0500"
+    assert chosen(80, set()) is None
+    assert "epoch_0100" not in estimated
+
+
+def test_the_matched_record_keeps_the_candidates_that_gave_way() -> None:
+    front = _front_pick()
+    rows = [
+        {"epoch": "epoch_0100", "accuracy_macro": 0.90, "ebops": 200},
+        {"epoch": "epoch_0300", "accuracy_macro": 0.80, "ebops": 110},
+        {"epoch": "epoch_0400", "accuracy_macro": 0.79, "ebops": 100},
+        {"epoch": "epoch_0500", "accuracy_macro": 0.70, "ebops": 90},
+    ]
+    latency = {"epoch_0300": 120.0, "epoch_0500": 60.0}
+
+    def estimate(row: dict) -> dict:
+        return row | {"latency_ns": latency[row["epoch"]], "cycles": 1}
+
+    record, found = front.matched_front(rows, 115, 100.0, estimate, {"epoch_0400"})
+    by_epoch = {row["epoch"]: row for row in record}
+
+    assert found["epoch"] == "epoch_0500"
+    assert [row["epoch"] for row in record] == [row["epoch"] for row in rows]
+    assert by_epoch["epoch_0300"]["latency_ns"] == 120.0
+    assert by_epoch["epoch_0500"]["latency_ns"] == 60.0
+    assert "latency_ns" not in by_epoch["epoch_0100"]
+    assert by_epoch["epoch_0400"]["skipped"] is True
+    assert by_epoch["epoch_0300"]["skipped"] is False
+
+
+def test_the_macro_accuracy_is_the_mean_per_class_recall(tmp_path: Path) -> None:
+    logits = np.eye(3)[[0, 0, 0, 1, 2, 2]]
+    labels = np.array([0, 0, 1, 1, 2, 2])
+    np.savez(tmp_path / "reference.npz", logits_clean=logits, labels=labels)
+
+    assert _front_pick().macro_accuracy(tmp_path) == pytest.approx((1 + 0.5 + 1) / 3)
