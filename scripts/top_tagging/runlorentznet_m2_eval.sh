@@ -259,3 +259,18 @@
 # python3 src/eval.py experiment=top_tagging_jetformer method=kd_hint data.regime=transformed data.group=lorentz_iso \
 #     algorithm.temperature=TODO_T_HINT_A1_X algorithm.alpha=1 algorithm.optimizer.lr=TODO_LR_HINT_X \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
+
+# ======================================================================
+# AUGMENTED BASELINE ON THE CANONICAL ROWS (Block 5 of 08_tests.md, 10 Nov 2026)
+# ======================================================================
+# B and C are read per regime on that regime's rows, so the augmented checkpoints are also
+# evaluated on the canonical rows. The run directory takes its own root, since eval_data does
+# not enter it and the evaluation on the transformed rows would otherwise be overwritten.
+
+# 38. baseline  augmented, on the canonical rows  [seeds] [folds]
+# python3 src/eval.py experiment=top_tagging_lorentznet_m2 method=baseline data.regime=augmented \
+#     data.group=lorentz_iso algorithm.optimizer.lr=0.000707422426877928 \
+#     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
+#     eval_splits=[fold] eval_data=canonical trainer=gpu trainer.devices=[0] \
+#     'hydra.run.dir=${paths.log_dir}/eval_canonical_rows/${run_dir}' \
+#     'hydra.sweep.dir=${paths.log_dir}/eval_canonical_rows/${run_dir_parent}'

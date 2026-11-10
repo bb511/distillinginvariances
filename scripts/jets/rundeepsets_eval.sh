@@ -342,3 +342,18 @@
 # 52. kd  transformed  T 0.5  alpha 0  edge point  [folds]
 # python3 src/eval.py experiment=jets_deepsets method=kd data.regime=transformed data.group=permutation \
 #     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.001754759256702473 eval_splits=[fold] trainer=gpu trainer.devices=[0]
+
+# ======================================================================
+# AUGMENTED BASELINE ON THE CANONICAL ROWS (Block 5 of 08_tests.md, 10 Nov 2026)
+# ======================================================================
+# B and C are read per regime on that regime's rows, so the augmented checkpoints are also
+# evaluated on the canonical rows. The run directory takes its own root, since eval_data does
+# not enter it and the evaluation on the transformed rows would otherwise be overwritten.
+
+# 53. baseline  augmented, on the canonical rows  [seeds] [folds]
+# python3 src/eval.py experiment=jets_deepsets method=baseline data.regime=augmented \
+#     data.group=permutation algorithm.optimizer.lr=0.003829873617004707 \
+#     'checkpoint_manifest_path=${paths.log_dir}/${train_task}/${data.dataset}/none/${regime_tag}/${stage}/${run_label}/${hp_tag}/checkpoint_manifest.json' \
+#     eval_splits=[fold] eval_data=canonical trainer=gpu trainer.devices=[0] \
+#     'hydra.run.dir=${paths.log_dir}/eval_canonical_rows/${run_dir}' \
+#     'hydra.sweep.dir=${paths.log_dir}/eval_canonical_rows/${run_dir_parent}'
