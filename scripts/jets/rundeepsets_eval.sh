@@ -172,148 +172,173 @@
 
 # 22. kd  canonical  alpha 0  headline  [seeds]
 # python3 src/eval.py experiment=jets_deepsets method=kd data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
+#     algorithm.temperature=8 algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 23. kd  canonical  alpha 1  headline  [seeds]
 # python3 src/eval.py experiment=jets_deepsets method=kd data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A1_C algorithm.alpha=1 algorithm.optimizer.lr=0.0027625564527090462 \
+#     algorithm.temperature=4 algorithm.alpha=1 algorithm.optimizer.lr=0.0027625564527090462 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 24. kd_hint  canonical  alpha 0  headline  [seeds]
 # python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.003144488838025729 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.003144488838025729 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 25. kd_hint  canonical  alpha 1  headline  [seeds]
 # python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A1_C algorithm.alpha=1 algorithm.optimizer.lr=0.003144488838025729 \
+#     algorithm.temperature=1 algorithm.alpha=1 algorithm.optimizer.lr=0.003144488838025729 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 26. kd  transformed  alpha 0  headline  [seeds]
 # python3 src/eval.py experiment=jets_deepsets method=kd data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.001754759256702473 \
+#     algorithm.temperature=1 algorithm.alpha=0 algorithm.optimizer.lr=0.001754759256702473 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 27. kd  transformed  alpha 1  headline  [seeds]
 # python3 src/eval.py experiment=jets_deepsets method=kd data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A1_X algorithm.alpha=1 algorithm.optimizer.lr=0.001754759256702473 \
+#     algorithm.temperature=2 algorithm.alpha=1 algorithm.optimizer.lr=0.001754759256702473 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 28. kd_hint  transformed  alpha 0  headline  [seeds]
 # python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.009643905397219323 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.009643905397219323 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 29. kd_hint  transformed  alpha 1  headline  [seeds]
 # python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A1_X algorithm.alpha=1 algorithm.optimizer.lr=0.009643905397219323 \
+#     algorithm.temperature=16 algorithm.alpha=1 algorithm.optimizer.lr=0.009643905397219323 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 30. hint_beta  transformed  alpha 0  beta grid  [folds]
 # python3 src/eval.py -m experiment=jets_deepsets method=hint_beta data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 \
 #     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=0.009643905397219323 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 31. hint_beta  transformed  alpha 1  beta grid  [folds]
 # python3 src/eval.py -m experiment=jets_deepsets method=hint_beta data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A1_X algorithm.alpha=1 \
+#     algorithm.temperature=16 algorithm.alpha=1 \
 #     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=0.009643905397219323 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 32. control mlp: kd  canonical  alpha 0  [seeds] [folds]
 # python3 src/eval.py experiment=jets_mlp method=kd data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
+#     algorithm.temperature=8 algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 33. control mlp: kd  canonical  alpha 1  [seeds] [folds]
 # python3 src/eval.py experiment=jets_mlp method=kd data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A1_C algorithm.alpha=1 algorithm.optimizer.lr=0.0027625564527090462 \
+#     algorithm.temperature=4 algorithm.alpha=1 algorithm.optimizer.lr=0.0027625564527090462 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 34. control mlp: kd_hint  canonical  alpha 0  [seeds] [folds]
 # python3 src/eval.py experiment=jets_mlp method=kd_hint data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.003144488838025729 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.003144488838025729 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 35. control mlp: kd_hint  canonical  alpha 1  [seeds] [folds]
 # python3 src/eval.py experiment=jets_mlp method=kd_hint data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A1_C algorithm.alpha=1 algorithm.optimizer.lr=0.003144488838025729 \
+#     algorithm.temperature=1 algorithm.alpha=1 algorithm.optimizer.lr=0.003144488838025729 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 36. control mlp: kd  transformed  alpha 0  [seeds] [folds]
 # python3 src/eval.py experiment=jets_mlp method=kd data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.001754759256702473 \
+#     algorithm.temperature=1 algorithm.alpha=0 algorithm.optimizer.lr=0.001754759256702473 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 37. control mlp: kd  transformed  alpha 1  [seeds] [folds]
 # python3 src/eval.py experiment=jets_mlp method=kd data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A1_X algorithm.alpha=1 algorithm.optimizer.lr=0.001754759256702473 \
+#     algorithm.temperature=2 algorithm.alpha=1 algorithm.optimizer.lr=0.001754759256702473 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 38. control mlp: kd_hint  transformed  alpha 0  [seeds] [folds]
 # python3 src/eval.py experiment=jets_mlp method=kd_hint data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.009643905397219323 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.009643905397219323 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 39. control mlp: kd_hint  transformed  alpha 1  [seeds] [folds]
 # python3 src/eval.py experiment=jets_mlp method=kd_hint data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A1_X algorithm.alpha=1 algorithm.optimizer.lr=0.009643905397219323 \
+#     algorithm.temperature=16 algorithm.alpha=1 algorithm.optimizer.lr=0.009643905397219323 \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 40. double width: kd  canonical  alpha 0  [folds]
 # python3 src/eval.py experiment=jets_deepsets method=kd data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
+#     algorithm.temperature=8 algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
 #     variant=wide net@student_net=mlp_jets_wide \
 #     'hp_tag=wide_T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 41. double width: kd  canonical  alpha 1  [folds]
 # python3 src/eval.py experiment=jets_deepsets method=kd data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A1_C algorithm.alpha=1 algorithm.optimizer.lr=0.0027625564527090462 \
+#     algorithm.temperature=4 algorithm.alpha=1 algorithm.optimizer.lr=0.0027625564527090462 \
 #     variant=wide net@student_net=mlp_jets_wide \
 #     'hp_tag=wide_T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 42. double width: kd_hint  canonical  alpha 0  [folds]
 # python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.003144488838025729 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.003144488838025729 \
 #     variant=wide net@student_net=mlp_jets_wide \
 #     'hp_tag=wide_T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 43. double width: kd_hint  canonical  alpha 1  [folds]
 # python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=canonical data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A1_C algorithm.alpha=1 algorithm.optimizer.lr=0.003144488838025729 \
+#     algorithm.temperature=1 algorithm.alpha=1 algorithm.optimizer.lr=0.003144488838025729 \
 #     variant=wide net@student_net=mlp_jets_wide \
 #     'hp_tag=wide_T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 44. double width: kd  transformed  alpha 0  [folds]
 # python3 src/eval.py experiment=jets_deepsets method=kd data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.001754759256702473 \
+#     algorithm.temperature=1 algorithm.alpha=0 algorithm.optimizer.lr=0.001754759256702473 \
 #     variant=wide net@student_net=mlp_jets_wide \
 #     'hp_tag=wide_T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 45. double width: kd  transformed  alpha 1  [folds]
 # python3 src/eval.py experiment=jets_deepsets method=kd data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_KD_A1_X algorithm.alpha=1 algorithm.optimizer.lr=0.001754759256702473 \
+#     algorithm.temperature=2 algorithm.alpha=1 algorithm.optimizer.lr=0.001754759256702473 \
 #     variant=wide net@student_net=mlp_jets_wide \
 #     'hp_tag=wide_T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 46. double width: kd_hint  transformed  alpha 0  [folds]
 # python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.009643905397219323 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.009643905397219323 \
 #     variant=wide net@student_net=mlp_jets_wide \
 #     'hp_tag=wide_T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
 
 # 47. double width: kd_hint  transformed  alpha 1  [folds]
 # python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=transformed data.group=permutation \
-#     algorithm.temperature=TODO_T_HINT_A1_X algorithm.alpha=1 algorithm.optimizer.lr=0.009643905397219323 \
+#     algorithm.temperature=16 algorithm.alpha=1 algorithm.optimizer.lr=0.009643905397219323 \
 #     variant=wide net@student_net=mlp_jets_wide \
 #     'hp_tag=wide_T${algorithm.temperature}_a${algorithm.alpha}_lr${algorithm.optimizer.lr}_s${seed}' \
 #     eval_splits=[fold] trainer=gpu trainer.devices=[0]
+
+# ======================================================================
+# W1 EDGE POINTS, the extra temperature of each arm whose first selection sat on a
+# grid end (Block 3; select_hparams.py, 10 Nov 2026), selected once more with it
+# ======================================================================
+
+# 48. kd_hint  canonical  T 0.5  alpha 0  edge point  [folds]
+# python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=canonical data.group=permutation \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.003144488838025729 eval_splits=[fold] trainer=gpu trainer.devices=[0]
+
+# 49. kd_hint  canonical  T 0.5  alpha 1  edge point  [folds]
+# python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=canonical data.group=permutation \
+#     algorithm.temperature=0.5 algorithm.alpha=1 algorithm.optimizer.lr=0.003144488838025729 eval_splits=[fold] trainer=gpu trainer.devices=[0]
+
+# 50. kd_hint  transformed  T 0.5  alpha 0  edge point  [folds]
+# python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=transformed data.group=permutation \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.009643905397219323 eval_splits=[fold] trainer=gpu trainer.devices=[0]
+
+# 51. kd_hint  transformed  T 32  alpha 1  edge point  [folds]
+# python3 src/eval.py experiment=jets_deepsets method=kd_hint data.regime=transformed data.group=permutation \
+#     algorithm.temperature=32 algorithm.alpha=1 algorithm.optimizer.lr=0.009643905397219323 eval_splits=[fold] trainer=gpu trainer.devices=[0]
+
+# 52. kd  transformed  T 0.5  alpha 0  edge point  [folds]
+# python3 src/eval.py experiment=jets_deepsets method=kd data.regime=transformed data.group=permutation \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.001754759256702473 eval_splits=[fold] trainer=gpu trainer.devices=[0]

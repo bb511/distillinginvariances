@@ -168,53 +168,53 @@
 
 # 19. kd  canonical  alpha 0  headline  [seeds]
 # python3 src/train.py experiment=mnist_cnn method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
-#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 20. kd  canonical  alpha 2  headline  [seeds]
 # python3 src/train.py experiment=mnist_cnn method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
-#     algorithm.temperature=TODO_T_KD_A2_C algorithm.alpha=2 algorithm.optimizer.lr=0.0027625564527090462 \
+#     algorithm.temperature=0.5 algorithm.alpha=2 algorithm.optimizer.lr=0.0027625564527090462 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 21. kd_hint  canonical  alpha 0  headline  [seeds]
 # python3 src/train.py experiment=mnist_cnn method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
-#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0036303760732131728 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.0036303760732131728 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 22. kd_hint  canonical  alpha 2  headline  [seeds]
 # python3 src/train.py experiment=mnist_cnn method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
-#     algorithm.temperature=TODO_T_HINT_A2_C algorithm.alpha=2 algorithm.optimizer.lr=0.0036303760732131728 \
+#     algorithm.temperature=1 algorithm.alpha=2 algorithm.optimizer.lr=0.0036303760732131728 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 23. kd  transformed  alpha 0  headline  [seeds]
 # python3 src/train.py experiment=mnist_cnn method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
-#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.0037214926657368383 \
+#     algorithm.temperature=8 algorithm.alpha=0 algorithm.optimizer.lr=0.0037214926657368383 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 24. kd  transformed  alpha 2  headline  [seeds]
 # python3 src/train.py experiment=mnist_cnn method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
-#     algorithm.temperature=TODO_T_KD_A2_X algorithm.alpha=2 algorithm.optimizer.lr=0.0037214926657368383 \
+#     algorithm.temperature=16 algorithm.alpha=2 algorithm.optimizer.lr=0.0037214926657368383 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 25. kd_hint  transformed  alpha 0  headline  [seeds]
 # python3 src/train.py experiment=mnist_cnn method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.008082117583015577 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.008082117583015577 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 26. kd_hint  transformed  alpha 2  headline  [seeds]
 # python3 src/train.py experiment=mnist_cnn method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
-#     algorithm.temperature=TODO_T_HINT_A2_X algorithm.alpha=2 algorithm.optimizer.lr=0.008082117583015577 \
+#     algorithm.temperature=0.5 algorithm.alpha=2 algorithm.optimizer.lr=0.008082117583015577 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 27. hint_beta  transformed  alpha 0  beta grid  [folds]
 # python3 src/train.py -m experiment=mnist_cnn method=hint_beta algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 \
 #     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=0.008082117583015577 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 28. hint_beta  transformed  alpha 2  beta grid  [folds]
 # python3 src/train.py -m experiment=mnist_cnn method=hint_beta algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
-#     algorithm.temperature=TODO_T_HINT_A2_X algorithm.alpha=2 \
+#     algorithm.temperature=0.5 algorithm.alpha=2 \
 #     algorithm.beta=0.05,0.1,0.25,0.5,0.75 algorithm.optimizer.lr=0.008082117583015577 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
@@ -228,40 +228,73 @@
 
 # 31. control cnn_zeros: kd  canonical  alpha 0  [seeds] [folds]
 # python3 src/train.py experiment=mnist_cnn_zeros method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
-#     algorithm.temperature=TODO_T_KD_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 32. control cnn_zeros: kd  canonical  alpha 2  [seeds] [folds]
 # python3 src/train.py experiment=mnist_cnn_zeros method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
-#     algorithm.temperature=TODO_T_KD_A2_C algorithm.alpha=2 algorithm.optimizer.lr=0.0027625564527090462 \
+#     algorithm.temperature=0.5 algorithm.alpha=2 algorithm.optimizer.lr=0.0027625564527090462 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 33. control cnn_zeros: kd_hint  canonical  alpha 0  [seeds] [folds]
 # python3 src/train.py experiment=mnist_cnn_zeros method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
-#     algorithm.temperature=TODO_T_HINT_A0_C algorithm.alpha=0 algorithm.optimizer.lr=0.0036303760732131728 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.0036303760732131728 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 34. control cnn_zeros: kd_hint  canonical  alpha 2  [seeds] [folds]
 # python3 src/train.py experiment=mnist_cnn_zeros method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
-#     algorithm.temperature=TODO_T_HINT_A2_C algorithm.alpha=2 algorithm.optimizer.lr=0.0036303760732131728 \
+#     algorithm.temperature=1 algorithm.alpha=2 algorithm.optimizer.lr=0.0036303760732131728 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 35. control cnn_zeros: kd  transformed  alpha 0  [seeds] [folds]
 # python3 src/train.py experiment=mnist_cnn_zeros method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
-#     algorithm.temperature=TODO_T_KD_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.0037214926657368383 \
+#     algorithm.temperature=8 algorithm.alpha=0 algorithm.optimizer.lr=0.0037214926657368383 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 36. control cnn_zeros: kd  transformed  alpha 2  [seeds] [folds]
 # python3 src/train.py experiment=mnist_cnn_zeros method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
-#     algorithm.temperature=TODO_T_KD_A2_X algorithm.alpha=2 algorithm.optimizer.lr=0.0037214926657368383 \
+#     algorithm.temperature=16 algorithm.alpha=2 algorithm.optimizer.lr=0.0037214926657368383 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 37. control cnn_zeros: kd_hint  transformed  alpha 0  [seeds] [folds]
 # python3 src/train.py experiment=mnist_cnn_zeros method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
-#     algorithm.temperature=TODO_T_HINT_A0_X algorithm.alpha=0 algorithm.optimizer.lr=0.008082117583015577 \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.008082117583015577 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
 # 38. control cnn_zeros: kd_hint  transformed  alpha 2  [seeds] [folds]
 # python3 src/train.py experiment=mnist_cnn_zeros method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
-#     algorithm.temperature=TODO_T_HINT_A2_X algorithm.alpha=2 algorithm.optimizer.lr=0.008082117583015577 \
+#     algorithm.temperature=0.5 algorithm.alpha=2 algorithm.optimizer.lr=0.008082117583015577 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
+
+# ======================================================================
+# W1 EDGE POINTS, the extra temperature of each arm whose first selection sat on a
+# grid end (Block 3; select_hparams.py, 10 Nov 2026), selected once more with it
+# ======================================================================
+
+# 39. kd_hint  canonical  T 0.5  alpha 0  edge point  [folds]
+# python3 src/train.py experiment=mnist_cnn method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.0036303760732131728 logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
+
+# 40. kd_hint  canonical  T 0.5  alpha 2  edge point  [folds]
+# python3 src/train.py experiment=mnist_cnn method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
+#     algorithm.temperature=0.5 algorithm.alpha=2 algorithm.optimizer.lr=0.0036303760732131728 logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
+
+# 41. kd  canonical  T 0.5  alpha 0  edge point  [folds]
+# python3 src/train.py experiment=mnist_cnn method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.0027625564527090462 logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
+
+# 42. kd  canonical  T 0.5  alpha 2  edge point  [folds]
+# python3 src/train.py experiment=mnist_cnn method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=canonical \
+#     algorithm.temperature=0.5 algorithm.alpha=2 algorithm.optimizer.lr=0.0027625564527090462 logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
+
+# 43. kd_hint  transformed  T 0.5  alpha 0  edge point  [folds]
+# python3 src/train.py experiment=mnist_cnn method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
+#     algorithm.temperature=0.5 algorithm.alpha=0 algorithm.optimizer.lr=0.008082117583015577 logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
+
+# 44. kd_hint  transformed  T 0.5  alpha 2  edge point  [folds]
+# python3 src/train.py experiment=mnist_cnn method=kd_hint algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
+#     algorithm.temperature=0.5 algorithm.alpha=2 algorithm.optimizer.lr=0.008082117583015577 logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
+
+# 45. kd  transformed  T 32  alpha 2  edge point  [folds]
+# python3 src/train.py experiment=mnist_cnn method=kd algorithm.optimizer.weight_decay=0.0001 data.regime=transformed \
+#     algorithm.temperature=32 algorithm.alpha=2 algorithm.optimizer.lr=0.0037214926657368383 logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
