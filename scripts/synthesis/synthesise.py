@@ -5,7 +5,11 @@ jet_tagging_gdl's ``synthesise_vn.py``, made generic in the top module and the i
 layout. The input is what ``scripts/synthesis/export_hgq.py`` writes for an ``hgq``
 checkpoint: the directory ``model.keras``, ``inputs.npz``, ``export.json`` and
 ``reference.npz``, whose logits are the bit-exact reference. The top module is named by
-``--project``, else by the ``port`` of ``export.json``.
+``--project``, else by the ``port`` of ``export.json``. The defaults are
+jet_tagging_gdl's flow: stages cut at ``--latency-cutoff`` 4.2 ns of the 5 ns clock,
+latency-aware ternary fusion, and the CMVM setting of ``--estimate-only``'s scan, so that
+the project built is the design estimated (user, 10 Nov 2026; the first baseline designs,
+built at 5.0 ns, alkaid's fusion and ``wmc`` at hard_dc 5, routed only under congestion).
 
 1. Keras runs on JAX's CPU backend at the ``floatx`` of ``export.json`` (float64
    reproduces the fixed-point arithmetic exactly, float32 does not); another backend is
@@ -15,7 +19,8 @@ checkpoint: the directory ``model.keras``, ``inputs.npz``, ``export.json`` and
 4. alkaid traces the model into combinational logic, as ``alkaid convert`` does but
    without its pass ``canonicalize_msb_wraps`` (see ``_disable_msb_wrap_pass``) and
    with the constant products of its matrix rows kept (``_keep_constant_products``), its
-   constant matrix-vector products solved by ``--method0`` at ``--hard-dc``; under
+   constant matrix-vector products solved by ``--method0`` at ``--hard-dc`` (either
+   unset takes the scan's, which then runs first, as under ``--estimate-only``); under
    ``--ternary aware`` its adder pairs are then fused latency-aware, so that the
    emulation of step 5 and the co-simulation of step 7 check the fused logic;
 5. the Keras and the alkaid predictions are written to ``<out>/keras_outputs.npz`` and
@@ -180,11 +185,11 @@ OPTIONS: tuple[tuple[str, dict[str, Any]], ...] = (
     ),
     (
         "--latency-cutoff",
-        {"type": float, "default": 5.0, "help": "combinational delay per stage (ns)"},
+        {"type": float, "default": 4.2, "help": "combinational delay per stage (ns)"},
     ),
-    ("--hard-dc", {"type": int, "default": 5, "help": "alkaid's delay constraint"}),
-    ("--method0", {"choices": METHODS, "default": "wmc", "help": "alkaid's CMVM"}),
-    ("--ternary", {"choices": TERNARY, "default": "fused", "help": "adder fusion"}),
+    ("--hard-dc", {"type": int, "help": "alkaid's delay constraint; None: the scan's"}),
+    ("--method0", {"choices": METHODS, "help": "alkaid's CMVM; None: the scan's"}),
+    ("--ternary", {"choices": TERNARY, "default": "aware", "help": "adder fusion"}),
     ("--cosim-jets", {"type": int, "default": 1000, "help": "jets co-simulated"}),
     ("--no-cosim", {"action": "store_true", "help": "skip the co-simulation"}),
     ("--no-vivado", {"action": "store_true", "help": "skip the Vivado run"}),
@@ -518,6 +523,7 @@ def run_record(args: argparse.Namespace, export: dict[str, Any]) -> dict[str, An
         "latency_cutoff": args.latency_cutoff,
         "ternary": args.ternary,
         "method0": args.method0,
+        "hard_dc": args.hard_dc,
         "export_dir": str(args.export_dir.resolve()),
         "prj_dir": str((args.out / "prj").resolve()),
         **{f"{name}_version": version(dist) for name, dist in DISTRIBUTIONS},
@@ -625,6 +631,7 @@ def build(args: argparse.Namespace) -> None:
     export = read_json(args.export_dir / "export.json")
     args.project = project_name(args, export)
     model = _timed("loading", load_model, args.export_dir, export["floatx"])
+    resolve_setting(args, model)
     words, logits, labels = load_reference(args.export_dir, args.outputs_npz)
     parts = split_inputs(model, words)
     comb, y_keras, y_alkaid = predict(args, model, parts, labels)
@@ -678,6 +685,16 @@ def scan(args: argparse.Namespace, model: Any) -> tuple[dict[str, Any], Any]:
         setting |= {"delay_ns": comb.latency[1], "cost": comb.cost}
         results.append((setting, comb))
     return min(results, key=lambda result: (result[0]["cycles"], result[0]["delay_ns"]))
+
+
+def resolve_setting(args: argparse.Namespace, model: Any) -> None:
+    """Fill an unset ``--method0`` or ``--hard-dc`` with the scan's setting."""
+    if args.method0 is not None and args.hard_dc is not None:
+        return
+    setting, _ = _timed("alkaid scan", scan, args, model)
+    args.method0 = args.method0 or setting["method0"]
+    args.hard_dc = setting["hard_dc"] if args.hard_dc is None else args.hard_dc
+    LOG.info("CMVM setting: %s at hard_dc %d", args.method0, args.hard_dc)
 
 
 def estimate(args: argparse.Namespace) -> None:

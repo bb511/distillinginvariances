@@ -207,6 +207,28 @@ def test_synthesis_emulates_the_export_bit_for_bit(tmp_path: Path) -> None:
     assert (out / "synthesis.csv").is_file()
 
 
+def test_synthesis_builds_the_estimated_design_at_the_sibling_flow(
+    tmp_path: Path,
+) -> None:
+    pytest.importorskip("alkaid")
+    module, datamodule = _bound(tmp_path)
+    module.export(tmp_path / "export", datamodule, {"row": "tiny"})
+    script = _synthesis_script()
+    estimated, built = tmp_path / "estimate", tmp_path / "synthesis"
+
+    export = ["--export-dir", str(tmp_path / "export")]
+    script.main([*export, "--out", str(estimated), "--estimate-only"])
+    script.main([*export, "--out", str(built), "--no-cosim", "--no-vivado"])
+    estimate = json.loads((estimated / "estimate.json").read_text())
+    check = json.loads((built / "check.json").read_text())
+
+    assert (check["method0"], check["hard_dc"]) == (
+        estimate["method0"],
+        estimate["hard_dc"],
+    )
+    assert (check["latency_cutoff"], check["ternary"]) == (4.2, "aware")
+
+
 def test_the_keras_kd_objective_is_the_torch_one() -> None:
     from src.algorithms.components.hgq_port import distillation_loss
     from src.algorithms.losses.kd import kd_loss

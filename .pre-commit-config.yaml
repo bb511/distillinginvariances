@@ -114,8 +114,9 @@ repos:
       - id: codespell
         args:
           - --skip=logs/**,data/**,*.ipynb
-          # LEACE, the concept-erasure method (arXiv:2306.03819).
-          - --ignore-words-list=leace
+          # LEACE, the concept-erasure method (arXiv:2306.03819); heros, the figures'
+          # helper for the TeX Gyre Heros font (notebooks/lib/distill_style.wl).
+          - --ignore-words-list=leace,heros
 
   # jupyter notebook cell output clearing
   - repo: https://github.com/kynan/nbstripout
