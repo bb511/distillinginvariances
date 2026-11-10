@@ -29,8 +29,9 @@
 #   bash scripts/cluster/submit_ngt.sh --only 1,2,5 --folds 1-5 scripts/top_tagging/runstudent_rows_train.sh \
 #       callbacks=default
 # [seeds]: the headline rows, baseline and augmented, also submitted with a trailing
-# seed=12346 and seed=12347, on the main run only. [folds]: every block, with --folds 1-5 and
-# a trailing callbacks=default.
+# seed=12346 and seed=12347, on the main run only. [folds]: the same headline rows (08_tests.md,
+# Block 8, 10 Nov 2026), with --folds 1-5 and a trailing callbacks=default; the label-smoothing
+# curves stay on the main run.
 #
 # Every command is commented out: copy one to run it by hand, or feed the file to
 # scripts/cluster/submit.sh (olgpu) or submit_ngt.sh (a pod).
@@ -47,12 +48,12 @@
 # python3 src/train.py experiment=student/top_tagging_pt_eta_phi method=baseline algorithm.optimizer.weight_decay=1e-07 algorithm.optimizer.lr=0.000707422426877928 data.regime=transformed \
 #     data.group=lorentz_iso logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
-# 3. label_smoothing  canonical  epsilon curve  [folds]
+# 3. label_smoothing  canonical  epsilon curve
 # python3 src/train.py -m experiment=student/top_tagging_pt_eta_phi method=label_smoothing algorithm.optimizer.weight_decay=1e-07 algorithm.optimizer.lr=0.000707422426877928 data.regime=canonical \
 #     algorithm.label_smoothing=0.05,0.1,0.2 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
 
-# 4. label_smoothing  transformed lorentz_iso  epsilon curve  [folds]
+# 4. label_smoothing  transformed lorentz_iso  epsilon curve
 # python3 src/train.py -m experiment=student/top_tagging_pt_eta_phi method=label_smoothing algorithm.optimizer.weight_decay=1e-07 algorithm.optimizer.lr=0.000707422426877928 data.regime=transformed \
 #     data.group=lorentz_iso algorithm.label_smoothing=0.05,0.1,0.2 \
 #     logger=none trainer=gpu trainer.devices=[0] callbacks=acquisition
