@@ -141,11 +141,12 @@ PROVENANCE_COLUMNS = (
     "stage", "variant", "optimizer", "scheduler", "guided_index", "group",
     "checkpoint_path", "run_dir", "config_hash",
 )
-# The columns of coverage.csv (src/coverage.py): one row per (cell, eval_data, probe,
+# The columns of coverage.csv (src/coverage.py): one row per (cell, eval_data, fold, probe,
 # magnitude bin); a blank magnitude is the whole draw. features names the student's
-# input columns, or "pixels".
+# input columns, or "pixels"; fold names the split whose validation rows trained the
+# classifier.
 COVERAGE_COLUMNS = (
-    "dataset", "teacher", "group", "features", "eval_data",
+    "dataset", "teacher", "group", "features", "eval_data", "fold",
     "probe_group", "probe_eta_max", "probe_max_shift", "probe_n_swaps",
     "magnitude", "bin_low", "bin_high", "n_pairs", "auc", "ci_low", "ci_high",
     "n_boot", "seed", "classifier_hidden", "classifier_epochs",

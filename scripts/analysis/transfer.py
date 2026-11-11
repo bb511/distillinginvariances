@@ -7,9 +7,13 @@ ceiling the cell's augmented baseline evaluated on those rows. Over the folds, t
 and the row's paired gain over the baseline get the corrected resampled t-interval
 (`src.utils.statistics`), and the gain the TOST p-value against the cell's margin.
 
-The margin is Block 2's: max(0.01, 0.1 x (ceiling - baseline)), both read on the main run's
-validation split. Where the ceiling's gain over the baseline there is below the margin, the
-fraction is undefined and reported as such (``fraction_defined`` False, fraction blank).
+The margin is Blocks 5 and 6's: max(0.02, 0.1 x (ceiling - baseline)), each the mean over
+the seeds of the main run's validation rows, read per regime on that regime's rows (the
+ceiling of a canonical-regime row is the augmented baseline evaluated on canonical rows).
+Where the ceiling's gain over the baseline there is below the margin, the fraction is
+undefined and reported as such (``fraction_defined`` False, fraction blank). Rows of a
+variant (``variant``, the double-width and p4 students) are left out, so that only the
+registered baseline serves as B and C.
 
     python3 scripts/analysis/transfer.py
     python3 scripts/analysis/transfer.py --split fold --out results/transfer_fold.csv
@@ -33,8 +37,8 @@ from src.utils.statistics import (  # noqa: E402
 )
 from src.vocabulary import MAIN_FOLD  # noqa: E402
 
-# Block 2: margin = max(FLOOR, SHARE x (ceiling - baseline)) in top-1 invariance.
-FLOOR, SHARE = 0.01, 0.1
+# Blocks 2 and 5: margin = max(FLOOR, SHARE x (ceiling - baseline)) in top-1 invariance.
+FLOOR, SHARE = 0.02, 0.1
 PROBE = (
     "eval_data",
     "probe_group",
@@ -62,9 +66,10 @@ OUT_COLUMNS = (
 
 
 def _read(path: Path) -> list[dict[str, str]]:
-    """Every row under its cell's own probe."""
+    """Every row of no variant under its cell's own probe."""
     with path.open(newline="") as handle:
-        return [r for r in csv.DictReader(handle) if r["probe_group"] == r["group"]]
+        rows = csv.DictReader(handle)
+        return [r for r in rows if r["probe_group"] == r["group"] and not r["variant"]]
 
 
 def _baselines(rows: list[dict[str, str]]) -> dict[tuple[str, ...], dict[str, str]]:
@@ -76,18 +81,33 @@ def _baselines(rows: list[dict[str, str]]) -> dict[tuple[str, ...], dict[str, st
     }
 
 
+def _main_means(
+    rows: list[dict[str, str]], metric: str
+) -> dict[tuple[str, ...], float]:
+    """The seed mean of every baseline on the main run's validation split, keyed by cell
+    and regime; a seed evaluated twice counts once, at its last row."""
+    by_seed: dict[tuple[str, ...], dict[str, float]] = {}
+    for r in rows:
+        if (
+            r["method"] == "baseline"
+            and r["fold"] == MAIN_FOLD
+            and r["eval_split"] == "fold"
+        ):
+            key = (*(r[c] for c in CELL), r["regime"])
+            by_seed.setdefault(key, {})[r["seed"]] = float(r[metric])
+    return {key: sum(v.values()) / len(v) for key, v in by_seed.items()}
+
+
 def _margin(
-    baselines: dict[tuple[str, ...], dict[str, str]], row: dict[str, str], metric: str
+    means: dict[tuple[str, ...], float], row: dict[str, str]
 ) -> tuple[float, float]:
     """The ceiling's gain over the row's baseline on the main run's validation split,
     and the margin it gives; NaN where either main-run row is missing."""
     cell = tuple(row[c] for c in CELL)
-    own = baselines.get((*cell, MAIN_FOLD, "fold", row["regime"]))
-    ceiling = baselines.get((*cell, MAIN_FOLD, "fold", "augmented"))
+    own, ceiling = means.get((*cell, row["regime"])), means.get((*cell, "augmented"))
     if own is None or ceiling is None:
         return math.nan, math.nan
-    gap = float(ceiling[metric]) - float(own[metric])
-    return gap, max(FLOOR, SHARE * gap)
+    return ceiling - own, max(FLOOR, SHARE * (ceiling - own))
 
 
 def _pair(
@@ -143,11 +163,11 @@ def _row(
 def main() -> None:
     args = _parse_args()
     rows = _read(args.results)
-    arms, baselines = _arms(rows, args.split, args.metric), _baselines(rows)
+    arms, means = _arms(rows, args.split, args.metric), _main_means(rows, args.metric)
     if not arms:
         raise SystemExit("No distilled row has both its baseline and its ceiling.")
     table = [
-        _row(arm, pairs, _margin(baselines, row, args.metric), args.metric, args.ratio)
+        _row(arm, pairs, _margin(means, row), args.metric, args.ratio)
         for arm, (row, pairs) in sorted(arms.items())
     ]
     args.out.parent.mkdir(parents=True, exist_ok=True)

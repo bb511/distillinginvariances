@@ -6,11 +6,16 @@ on the same rows under the same probe, so the fold-to-fold spread of the pool ca
 The folds share most of their training rows, so the mean difference is tested by the
 corrected resampled t-test (`src.utils.statistics`, ratio n_test / n_train = 1 / (K - 1),
 0.25 for five folds); with --margin, the TOST p-value for a difference within it is
-added.
+added. With --reference-teacher, the reference rows are that teacher's (a control teacher)
+and a pair shares the cell's group in place of its teacher, so that a student is compared
+with the control-teacher student of its cell at the same temperature and alpha (H1a, H1c).
+Rows of a variant other than --variant (none by default) are left out.
 
     python3 scripts/analysis/paired_differences.py --method kd
     python3 scripts/analysis/paired_differences.py --method relational --baseline kd \\
         --split test --metrics accuracy nll fid_top1
+    python3 scripts/analysis/paired_differences.py --method kd --baseline kd \\
+        --reference-teacher mlp --margin 0.05
 """
 
 from __future__ import annotations
@@ -78,22 +83,35 @@ def _number(value: str) -> float:
 _SHORT = len(JOIN) - len(SHARED_KNOBS)
 
 
-def _index(rows: list[dict[str, str]]) -> dict[tuple[str, ...], dict[str, str]]:
-    # Both keys: a baseline carries no temperature and no alpha, so the full key of a
-    # distilled run never matches it and the short key is what finds it.
+def _join(args: argparse.Namespace) -> tuple[str, ...]:
+    # A control teacher differs from the cell's teacher, so its rows pair by group.
+    if args.reference_teacher is None:
+        return JOIN
+    return tuple("group" if column == "teacher" else column for column in JOIN)
+
+
+def _index(
+    rows: list[dict[str, str]], join: tuple[str, ...]
+) -> dict[tuple[str, ...], dict[str, str]]:
+    # A baseline carries no temperature and no alpha, so the full key of a distilled run
+    # never matches it and the short key is what finds it. Only such a row gets the short
+    # key: a distilled reference pairs at its own knobs alone.
     index: dict[tuple[str, ...], dict[str, str]] = {}
     for row in rows:
-        index[tuple(row[column] for column in JOIN)] = row
-        index.setdefault(tuple(row[column] for column in JOIN[:_SHORT]), row)
+        index[tuple(row[column] for column in join)] = row
+        if not any(row[column] for column in SHARED_KNOBS):
+            index.setdefault(tuple(row[column] for column in join[:_SHORT]), row)
     return index
 
 
 def _pairs(
-    rows: list[dict[str, str]], reference: dict[tuple[str, ...], dict[str, str]]
+    rows: list[dict[str, str]],
+    reference: dict[tuple[str, ...], dict[str, str]],
+    join: tuple[str, ...],
 ) -> dict[tuple[str, ...], list[tuple[dict[str, str], dict[str, str]]]]:
     pairs: dict[tuple[str, ...], list[tuple[dict[str, str], dict[str, str]]]] = {}
     for row in rows:
-        key = tuple(row[column] for column in JOIN)
+        key = tuple(row[column] for column in join)
         other = reference.get(key) or reference.get(key[:_SHORT])
         if other is not None:
             pairs.setdefault(tuple(row[column] for column in CELL), []).append(
@@ -103,15 +121,16 @@ def _pairs(
 
 
 def _select(
-    rows: list[dict[str, str]], method: str, split: str
+    rows: list[dict[str, str]], method: str, args: argparse.Namespace
 ) -> list[dict[str, str]]:
     # The main run is no fold, so it never enters a per-fold difference.
     return [
         row
         for row in rows
         if row["method"] == method
-        and row["eval_split"] == split
+        and row["eval_split"] == args.split
         and row["fold"] != MAIN_FOLD
+        and row["variant"] == args.variant
     ]
 
 
@@ -126,7 +145,10 @@ def _row(
     key: tuple[str, ...], deltas: list[float], metric: str, args: argparse.Namespace
 ) -> dict[str, object]:
     test = corrected_t(deltas, args.ratio)
-    cells = dict(zip(CELL, key)) | {"method": args.method, "reference": args.baseline}
+    reference = args.baseline
+    if args.reference_teacher is not None:
+        reference = f"{args.reference_teacher}:{args.baseline}"
+    cells = dict(zip(CELL, key)) | {"method": args.method, "reference": reference}
     cells |= {"eval_split": args.split, "metric": metric, "n_folds": len(deltas)}
     cells |= {"mean_delta": test.pop("mean")} | test
     if args.margin is None:
@@ -140,8 +162,12 @@ def _row(
 def _table(
     rows: list[dict[str, str]], args: argparse.Namespace
 ) -> list[dict[str, object]]:
-    reference = _index(_select(rows, args.baseline, args.split))
-    pairs = _pairs(_select(rows, args.method, args.split), reference)
+    join, own = _join(args), _select(rows, args.method, args)
+    references = _select(rows, args.baseline, args)
+    if args.reference_teacher is not None:
+        own = [r for r in own if r["teacher"] != args.reference_teacher]
+        references = [r for r in references if r["teacher"] == args.reference_teacher]
+    pairs = _pairs(own, _index(references, join), join)
     return [
         _row(key, deltas, metric, args)
         for key in sorted(pairs)
@@ -189,6 +215,10 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--metrics", nargs="+", default=list(METRICS))
     parser.add_argument("--ratio", type=float, default=0.25, help="n_test / n_train")
     parser.add_argument("--margin", type=float, default=None, help="TOST margin")
+    parser.add_argument(
+        "--reference-teacher", default=None, help="the control teacher compared against"
+    )
+    parser.add_argument("--variant", default="", help="the variant compared (none)")
     return parser.parse_args()
 
 

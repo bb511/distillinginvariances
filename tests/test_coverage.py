@@ -3,8 +3,11 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from src.coverage import _identity
 from src.metrics.coverage import auc, auc_interval, fit_classifier, scores
+from src.metrics.evaluate import make_probe
 from src.metrics.magnitude import bin_masks, with_derived
+from src.vocabulary import COVERAGE_COLUMNS, MAIN_FOLD
 from tests.conftest import compose_root
 
 SETTINGS = {"hidden": [16, 16], "epochs": 30, "lr": 1e-2, "batch_size": 128}
@@ -66,3 +69,13 @@ def test_the_coverage_config_composes(tmp_path: Path) -> None:
     assert (cfg.task_name, cfg.probe_group, cfg.eval_data) == ("coverage", None, None)
     assert cfg.probe.n_draws == 1 and cfg.seed == 12345
     assert cfg.results.path.endswith("coverage.csv")
+
+
+def test_a_coverage_row_names_its_fold() -> None:
+    cfg = compose_root("coverage.yaml", "experiment=mnist_cnn", "trainer=cpu", "fold=3")
+    main = compose_root("coverage.yaml", "experiment=mnist_cnn", "trainer=cpu")
+    probe = make_probe("translation", cfg.probe)
+
+    assert _identity(cfg, probe)["fold"] == 3
+    assert _identity(main, probe)["fold"] == MAIN_FOLD
+    assert set(_identity(cfg, probe)) <= set(COVERAGE_COLUMNS)

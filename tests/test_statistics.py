@@ -44,7 +44,7 @@ def test_the_transfer_fraction_reads_agreements_and_distances() -> None:
 
 
 BLANKS = ("temperature", "alpha", "beta", "discrepancy", "lambda_is", "lambda_ic")
-BLANKS += ("label_smoothing", "lr")
+BLANKS += ("label_smoothing", "lr", "variant", "seed")
 PROBE = ("probe_eta_max", "probe_max_shift", "probe_n_swaps")
 
 
@@ -70,7 +70,7 @@ def _run(script: str, rows: list[dict[str, object]], tmp_path: Path, *extra: str
 def test_the_transfer_fraction_follows_block_3(tmp_path: Path) -> None:
     rows = []
     # deepsets: a ceiling gap of 0.4 on the main run, margin 0.04, fraction defined;
-    # lorentznet: a gap of 0.005, below the 0.01 floor, fraction undefined.
+    # lorentznet: a gap of 0.005, below the 0.02 floor of Block 5, fraction undefined.
     for teacher, gap in (("deepsets", 0.4), ("lorentznet", 0.005)):
         cell = _cell(teacher)
         for fold, split in [("main", "fold")] + [(f, "test") for f in range(1, 6)]:
@@ -90,7 +90,71 @@ def test_the_transfer_fraction_follows_block_3(tmp_path: Path) -> None:
     assert abs(float(result["deepsets"]["margin"]) - 0.04) < 1e-12
     assert result["lorentznet"]["fraction_defined"] == "False"
     assert result["lorentznet"]["fraction_mean"] == ""
-    assert float(result["lorentznet"]["margin"]) == 0.01
+    assert float(result["lorentznet"]["margin"]) == 0.02
+
+
+def test_the_margin_averages_the_seeds_and_ignores_variants(tmp_path: Path) -> None:
+    cell, rows = _cell("deepsets"), []
+    # Main run: baselines at 0.4 and 0.6 over two seeds (mean 0.5), the ceiling at 0.9 and
+    # 1.1 (mean 1.0), so the gap is 0.5 and the margin 0.05; a wide baseline at 0.0 and a
+    # wide student on every fold would shift both the margin and the gain if read.
+    for seed, base, top in (("12345", 0.4, 0.9), ("12346", 0.6, 1.1)):
+        for regime, value in (("canonical", base), ("augmented", top)):
+            keys = {
+                "fold": "main",
+                "eval_split": "fold",
+                "regime": regime,
+                "seed": seed,
+            }
+            rows.append(cell | keys | {"method": "baseline", "inv_top1": value})
+    for fold in range(1, 6):
+        keys = {"fold": fold, "eval_split": "test", "seed": "12345"}
+        for regime, method, variant, value in (
+            ("canonical", "baseline", "", 0.5),
+            ("canonical", "baseline", "wide", 0.0),
+            ("augmented", "baseline", "", 1.0),
+            ("canonical", "kd", "", 0.75),
+        ):
+            extra = {"regime": regime, "method": method, "variant": variant}
+            rows.append(cell | keys | extra | {"inv_top1": value})
+
+    (result,) = _run("transfer", rows, tmp_path)
+
+    assert abs(float(result["margin"]) - 0.05) < 1e-12
+    assert abs(float(result["gain_mean"]) - 0.25) < 1e-12
+    assert abs(float(result["fraction_mean"]) - 0.5) < 1e-12
+
+
+def test_a_student_pairs_with_its_control_teacher_student(tmp_path: Path) -> None:
+    rows = []
+    # deepsets kd at T 4 against the mlp control at T 4: a gain of 0.1 + 0.01 x fold; the mlp
+    # control at T 8, a wide deepsets student and a deepsets student at T 2, which has no
+    # control, must not enter the pairs.
+    for fold in range(1, 6):
+        keys = {
+            "fold": fold,
+            "eval_split": "test",
+            "regime": "canonical",
+            "method": "kd",
+        }
+        for teacher, temperature, variant, value in (
+            ("deepsets", "4", "", 0.6 + 0.01 * fold),
+            ("deepsets", "4", "wide", 0.0),
+            ("deepsets", "2", "", 0.0),
+            ("mlp", "4", "", 0.5),
+            ("mlp", "8", "", 0.9),
+        ):
+            extra = {"temperature": temperature, "alpha": "0", "variant": variant}
+            rows.append(_cell(teacher) | keys | extra | {"inv_top1": value})
+    extra = ("--method", "kd", "--baseline", "kd", "--reference-teacher", "mlp")
+
+    (result,) = _run(
+        "paired_differences", rows, tmp_path, *extra, "--metrics", "inv_top1"
+    )
+
+    assert result["teacher"] == "deepsets" and result["reference"] == "mlp:kd"
+    assert result["n_folds"] == "5"
+    assert abs(float(result["mean_delta"]) - 0.13) < 1e-12
 
 
 def test_the_selection_ties_to_the_lower_temperature_and_flags_an_edge(

@@ -13,7 +13,7 @@ from omegaconf import DictConfig, OmegaConf
 # Before any src import: .env carries PROJECT_ROOT and HF_HUB_CACHE, both read at import time.
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True, dotenv=True)
 
-from src.utils.omegaconf import register_resolvers
+from src.utils.omegaconf import fold_value, register_resolvers
 
 # Before Hydra composes: the configs interpolate ${short_hash:}, ${fold_idx:},
 # ${fold_label:} and ${regime_of_teacher:}.
@@ -137,6 +137,7 @@ def _identity(cfg: DictConfig, probe: Probe) -> dict[str, Any]:
         "group": cfg.data.group,
         "features": ",".join(required) if required else "pixels",
         "eval_data": eval_data(cfg),
+        "fold": fold_value(cfg.fold),
         "n_boot": cfg.n_boot,
         "seed": cfg.seed,
         "classifier_hidden": "x".join(str(width) for width in cfg.classifier.hidden),
