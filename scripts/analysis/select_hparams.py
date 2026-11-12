@@ -9,7 +9,8 @@ channel, alpha, discrepancy) the point of highest score wins; points within 0.00
 tie, and a tie goes to the lower temperature, then the lower beta. A selected temperature
 at an end of the grid {1, ..., 16} whose next point (0.5 or 32) is absent is flagged in
 ``extend_with``; once that point exists the rule applies once more and flags nothing.
-The firmware student of a cell is the canonical-regime distilled row of highest score
+A Hint-beta arm, a beta grid at one selected temperature, is never flagged. The
+firmware student of a cell is the canonical-regime distilled row of highest score
 among the selected points. The label-smoothed students are a curve over epsilon,
 reported whole and never selected. Only a cell teacher's own grid, at the default seed, is
 ranked: the control teachers' rows, the variants (``variant``) and the extra seeds are
@@ -39,6 +40,9 @@ SCORE = "accuracy_macro"
 TIE = 0.001
 # The grid ends and the point each adds when selected (Block 3's edge rule).
 EDGES = {1.0: 0.5, 16.0: 32.0}
+# The methods trained over beta at one selected temperature: Block 3 gives the edge rule
+# to the temperature grid alone, so their arms are never flagged.
+BETA_ARMS = ("hint_beta",)
 # Label smoothing is reported at every epsilon, so it has no selected point.
 NOT_SELECTED = ("teacher", "constant", "label_smoothing")
 # The grid is trained at the default seed. The extra seeds of a headline row come after its
@@ -136,6 +140,8 @@ def _select(points: list[dict[str, str]]) -> dict[str, str]:
 
 def _extension(best: dict[str, str], points: list[dict[str, str]]) -> str:
     """The temperature still to train when the selection sits on a grid end."""
+    if best["method"] in BETA_ARMS:
+        return ""
     selected = _number(best["temperature"], math.nan)
     nxt = EDGES.get(selected)
     trained = {_number(row["temperature"], math.nan) for row in points}

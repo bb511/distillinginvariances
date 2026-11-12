@@ -9,7 +9,11 @@ corrected resampled t-test (`src.utils.statistics`, ratio n_test / n_train = 1 /
 added. With --reference-teacher, the reference rows are that teacher's (a control teacher)
 and a pair shares the cell's group in place of its teacher, so that a student is compared
 with the control-teacher student of its cell at the same temperature and alpha (H1a, H1c).
-Rows of a variant other than --variant (none by default) are left out.
+A method whose rows carry no temperature (relational, logit matching) pairs with a
+distilled reference at the same alpha and at the reference's selected temperature, which
+Block 3's rule (`select_hparams.py`) picks from the main run's validation rows of the same
+table; that temperature is written to ``reference_temperature``. Rows of a variant other
+than --variant (none by default) are left out.
 
     python3 scripts/analysis/paired_differences.py --method kd
     python3 scripts/analysis/paired_differences.py --method relational --baseline kd \\
@@ -32,6 +36,9 @@ sys.path.insert(0, str(ROOT))
 from src.utils.statistics import corrected_t, equivalence_p  # noqa: E402
 from src.vocabulary import MAIN_FOLD  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import select_hparams  # noqa: E402
+
 # The rows a pair must share beside its cell: the data evaluated and the probe.
 PROBE = (
     "eval_data",
@@ -48,11 +55,14 @@ SHARED_KNOBS = ("temperature", "alpha", "label_smoothing")
 JOIN = ("dataset", "teacher", "regime", "fold", *PROBE, *SHARED_KNOBS)
 # What the pairs are reported per, the fold having been averaged out of them.
 CELL = ("dataset", "teacher", "regime", *PROBE, *SHARED_KNOBS)
+# The arm whose selected temperature a method without one is paired at.
+ARM = ("dataset", "teacher", "regime", "alpha")
 METRICS = ("accuracy", "nll", "ece", "fid_top1", "inv_top1", "inv_sqrtjsd")
 OUT_COLUMNS = (
     *CELL,
     "method",
     "reference",
+    "reference_temperature",
     "eval_split",
     "metric",
     "n_folds",
@@ -104,14 +114,31 @@ def _index(
     return index
 
 
+def _selected_temperatures(
+    rows: list[dict[str, str]], method: str
+) -> dict[tuple[str, ...], str]:
+    # The folds of most cells hold every temperature of the grid, so the selected one
+    # comes from the main run (user, 11 Nov 2026).
+    arms = select_hparams._arms(select_hparams._candidates(rows))
+    picks = [select_hparams._select(points) for points in arms.values()]
+    return {
+        tuple(pick[column] for column in ARM): pick["temperature"]
+        for pick in picks
+        if pick["method"] == method and pick["temperature"]
+    }
+
+
 def _pairs(
     rows: list[dict[str, str]],
     reference: dict[tuple[str, ...], dict[str, str]],
     join: tuple[str, ...],
+    selected: dict[tuple[str, ...], str],
 ) -> dict[tuple[str, ...], list[tuple[dict[str, str], dict[str, str]]]]:
     pairs: dict[tuple[str, ...], list[tuple[dict[str, str], dict[str, str]]]] = {}
     for row in rows:
-        key = tuple(row[column] for column in join)
+        temperature = selected.get(tuple(row[column] for column in ARM), "")
+        knobs = row | {"temperature": row["temperature"] or temperature}
+        key = tuple(knobs[column] for column in join)
         other = reference.get(key) or reference.get(key[:_SHORT])
         if other is not None:
             pairs.setdefault(tuple(row[column] for column in CELL), []).append(
@@ -141,6 +168,11 @@ def _deltas(
     return [value for value in values if not math.isnan(value)]
 
 
+def _reference_temperature(pairs: list[tuple[dict[str, str], dict[str, str]]]) -> str:
+    row, other = pairs[0]
+    return "" if other["temperature"] == row["temperature"] else other["temperature"]
+
+
 def _row(
     key: tuple[str, ...], deltas: list[float], metric: str, args: argparse.Namespace
 ) -> dict[str, object]:
@@ -167,9 +199,11 @@ def _table(
     if args.reference_teacher is not None:
         own = [r for r in own if r["teacher"] != args.reference_teacher]
         references = [r for r in references if r["teacher"] == args.reference_teacher]
-    pairs = _pairs(own, _index(references, join), join)
+    selected = _selected_temperatures(rows, args.baseline)
+    pairs = _pairs(own, _index(references, join), join, selected)
     return [
         _row(key, deltas, metric, args)
+        | {"reference_temperature": _reference_temperature(pairs[key])}
         for key in sorted(pairs)
         for metric in args.metrics
         if (deltas := _deltas(pairs[key], metric))

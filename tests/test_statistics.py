@@ -155,6 +155,37 @@ def test_a_student_pairs_with_its_control_teacher_student(tmp_path: Path) -> Non
     assert result["teacher"] == "deepsets" and result["reference"] == "mlp:kd"
     assert result["n_folds"] == "5"
     assert abs(float(result["mean_delta"]) - 0.13) < 1e-12
+    assert result["reference_temperature"] == ""
+
+
+def test_a_relational_student_pairs_with_kd_at_its_selected_temperature(
+    tmp_path: Path,
+) -> None:
+    cell, rows = _cell("deepsets"), []
+    # The main run selects T 4 at alpha 0 and T 2 at alpha 1; every T is on the folds, and
+    # the unselected ones would shift the difference if read.
+    for alpha, scores in (("0", {"2": 0.70, "4": 0.80, "8": 0.75}), ("1", {"2": 0.9})):
+        for temperature, score in scores.items():
+            keys = {"fold": "main", "eval_split": "fold", "regime": "canonical"}
+            knobs = {"method": "kd", "temperature": temperature, "alpha": alpha}
+            rows.append(cell | keys | knobs | {"accuracy_macro": score})
+    fold_kd = {("0", "2"): 0.0, ("0", "4"): 0.5, ("0", "8"): 0.9, ("1", "2"): 0.4}
+    for fold in range(1, 6):
+        keys = {"fold": fold, "eval_split": "test", "regime": "canonical"}
+        for (alpha, temperature), value in fold_kd.items():
+            knobs = {"method": "kd", "temperature": temperature, "alpha": alpha}
+            rows.append(cell | keys | knobs | {"inv_top1": value})
+        for alpha in ("0", "1"):
+            knobs = {"method": "relational", "alpha": alpha, "discrepancy": "cosine"}
+            rows.append(cell | keys | knobs | {"inv_top1": 0.6 + 0.01 * fold})
+    extra = ("--method", "relational", "--baseline", "kd", "--metrics", "inv_top1")
+
+    result = {r["alpha"]: r for r in _run("paired_differences", rows, tmp_path, *extra)}
+
+    assert [result[a]["reference_temperature"] for a in ("0", "1")] == ["4", "2"]
+    assert all(result[a]["n_folds"] == "5" for a in ("0", "1"))
+    assert abs(float(result["0"]["mean_delta"]) - 0.13) < 1e-12
+    assert abs(float(result["1"]["mean_delta"]) - 0.23) < 1e-12
 
 
 def test_the_selection_ties_to_the_lower_temperature_and_flags_an_edge(
