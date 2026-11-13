@@ -6,7 +6,8 @@ Frames are low-rank encodings, so that LEACE removes few dimensions of a narrow 
 torus shift as (cos, sin) of each angle (rank 4); a permutation of the slots by the
 Spearman correlation between slot and pT over the real constituents and the slot of the
 leading constituent (rank 2); a beam rotation and boost as (cos, sin) of the angle and
-the rapidity (rank 3).
+the rapidity (rank 3); a rotation by the line it takes the beam to (rank 5); an
+isotropic boost by its rapidity vector (rank 3).
 """
 
 import math
@@ -39,6 +40,11 @@ def frame_labels(
     if group == "z":
         angle, rapidity = params[:, 0].double(), params[:, 1].double()
         return torch.stack([angle.cos(), angle.sin(), rapidity], dim=1)
+    if group == "so3":
+        # Column 2 of R is R z, where the beam of x lies in the coordinates of g.x.
+        return _line_quadrupole(params[:, :, 2].double())
+    if group == "lorentz_iso":
+        return _rapidity_vector(params.double())
     raise ValueError(f"No frame encoding is defined for the group {group!r}.")
 
 
@@ -78,6 +84,34 @@ def _slot_order(pt: torch.Tensor) -> torch.Tensor:
     spearman = 1.0 - 6.0 * squared / (count * (count**2 - 1.0)).clamp_min(1.0)
     leading = pt.argmax(1).double() / (pt.shape[1] - 1)
     return torch.stack([torch.where(count > 1, spearman, 0.0), leading], dim=1)
+
+
+def _line_quadrupole(axis: torch.Tensor) -> torch.Tensor:
+    """The traceless part of n n^T for unit vectors n ``(samples, 3)``, as five
+    coordinates in an orthonormal basis, each of variance 1/5 for n uniform on S^2.
+
+    It is even in n, since only the beam's line can be recovered from g.x: on jets whose
+    distribution is unchanged by a half turn about a transverse axis, which takes z to
+    -z, a Haar draw R and R composed with that half turn are equally likely given g.x.
+    """
+    x, y, z = axis.unbind(dim=1)
+    root3 = math.sqrt(3.0)
+    entries = [root3 * x * y, root3 * x * z, root3 * y * z]
+    entries += [root3 / 2 * (x**2 - y**2), (3 * z**2 - 1) / 2]
+    return torch.stack(entries, dim=1)
+
+
+def _rapidity_vector(boosts: torch.Tensor) -> torch.Tensor:
+    """xi n for boosts ``(samples, 4, 4)`` of rapidity xi along the unit vector n, read
+    from their row ``boosts[:, 0, 1:] = -sinh(xi) n``; a beam boost gives (0, 0, xi),
+    the z frame's rapidity, and a draw of exactly zero gives 0.
+
+    asinh of the row's norm keeps its precision at small xi, where acosh of the energy
+    entry loses it.
+    """
+    row = -boosts[:, 0, 1:]
+    sinh = row.norm(dim=1, keepdim=True)
+    return torch.asinh(sinh) * row / sinh.clamp_min(1e-300)
 
 
 def _image_concepts(images: torch.Tensor) -> dict[str, torch.Tensor]:

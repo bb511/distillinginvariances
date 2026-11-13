@@ -3,7 +3,12 @@ import math
 import torch
 
 from src.algorithms.components.mlp import MLPStudent
-from src.data.components.augmentation import apply_permutation, translate
+from src.data.components.augmentation import (
+    _sample_boosts,
+    apply_permutation,
+    sample_z_matrices,
+    translate,
+)
 from src.metrics.concepts import concept_labels, frame_labels
 from src.metrics.erasure import (
     erase,
@@ -14,6 +19,7 @@ from src.metrics.erasure import (
     random_removal,
     ridge_predict,
 )
+from src.metrics.magnitude import magnitudes
 from tests.conftest import compose_root
 
 NAMES = ["pt", "etarel", "phirel", "e", "px", "py", "pz"]
@@ -82,6 +88,30 @@ def test_the_frames_encode_each_draw() -> None:
     expected = torch.tensor([[-1.0, 0.0], [1.0, 1.0]], dtype=torch.float64)
     assert torch.allclose(slots, expected, atol=1e-12)
     assert torch.allclose(beam, torch.tensor([[-1.0, 0.0, 0.5]]).double(), atol=1e-12)
+
+
+def test_the_so3_and_lorentz_iso_frames_encode_each_draw() -> None:
+    half_turn = torch.diag(torch.tensor([1.0, -1.0, -1.0]))
+    beam_to_x = torch.tensor([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]])
+    rotations = torch.stack([torch.eye(3), half_turn, beam_to_x])
+    torch.manual_seed(5)
+    beam, draws = sample_z_matrices(8, 1.0)
+    boosts = torch.cat([_sample_boosts(256, 1.0, True, None), torch.eye(4)[None]])
+    layout = (None, None)
+
+    line = frame_labels("so3", rotations, None, layout)
+    along = frame_labels("lorentz_iso", beam, None, layout)
+    vector = frame_labels("lorentz_iso", boosts, None, layout)
+    sizes = magnitudes("lorentz_iso", boosts, None)
+
+    expected = [[0, 0, 0, 0, 1], [0, 0, 0, 0, 1], [0, 0, 0, math.sqrt(3) / 2, -0.5]]
+    assert torch.allclose(line, torch.tensor(expected).double(), atol=1e-7)
+    assert torch.allclose(along[:, :2], torch.zeros(8, 2).double(), atol=1e-7)
+    assert torch.allclose(along[:, 2], draws[:, 1].double(), atol=1e-6)
+    norm = vector.norm(dim=1)
+    assert torch.allclose(norm, sizes["rapidity"], atol=1e-6)
+    assert torch.allclose(vector[:-1, 2] / norm[:-1], sizes["axis_cos"][:-1], atol=1e-5)
+    assert torch.equal(vector[-1], torch.zeros(3).double())
 
 
 def test_the_concepts_hold_on_their_orbits() -> None:
