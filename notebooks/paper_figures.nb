@@ -1,0 +1,109 @@
+Notebook[{Cell["Figures of the paper", "Title"], 
+  Cell["The five figures of the paper and every number they draw, from the \
+tables under results/ (results/results.md gives each result with its \
+standing, results/INDEX.md the tables). Invariance is I_top1 under the cell's \
+own probe, a fold mean on the test split with the corrected 95 % interval, \
+unless a figure says otherwise. The marks are shared by the figures: the \
+colour is the cell (cool where its group is a symmetry of the task, warm \
+where it is not), the shape the channel, filled \[Alpha] = 0 and open \
+\[Alpha] = \[Alpha]_CE, and a faded point one whose test against the margin \
+is inconclusive; a solid point is either equivalent (TOST p < 0.05) or a \
+difference (95 % interval excluding zero), and the readings give each point's \
+outcome; the grey band is the cell's equivalence margin. All methods live in \
+lib/style.wl (the house style), lib/paper_common.wl and \
+lib/fig1_attribution.wl to lib/fig5_depth.wl; this notebook only drives them. \
+Figures go to paper_figures/ beside this notebook, at their final size in \
+points (396 pt wide), as PDF and PNG. Run top to bottom (Evaluation > \
+Evaluate Notebook).", "Text"], 
+  Cell[CellGroupData[{Cell["Setup", "Section"], Cell["SetDirectory[NotebookDi\
+rectory[]];\nresultsDir = FileNameJoin[{NotebookDirectory[], \"..\", \
+\"results\"}];\noutDir = FileNameJoin[{NotebookDirectory[], \
+\"paper_figures\"}];\nQuiet[CreateDirectory[outDir]];\nGet[FileNameJoin[{Note\
+bookDirectory[], \"lib\", #}]] & /@ {\"style.wl\", \"paper_common.wl\", \
+\"fig1_attribution.wl\", \"fig2_ceiling.wl\", \"fig3_coverage.wl\", \
+\"fig4_transformed.wl\", \"fig5_depth.wl\"};", "Input"]}, Open]], 
+  Cell[CellGroupData[{Cell["Figure 1: whose invariance the student gains", 
+      "Section"], Cell["The money plot. On canonical rows, the invariance \
+each KD and Hint student gains over the student of the cell's non-invariant \
+control at the same T and \[Alpha] (the MLP for DeepSets, the zero-padded CNN \
+for MNIST, JetFormer elsewhere), with its 95 % interval. The gain lies above \
+zero in every arm of LLoCa-SO(3) and LorentzNet, inside the margin in \
+DeepSets and MNIST, and is inconclusive in LLoCa-z and top tagging. Each \
+point is the paired test at the cell's margin: registered as H1a in DeepSets \
+and H1c in LLoCa-SO(3), both supported; elsewhere a test that no hypothesis \
+registered, with no direction predicted. The split of the cells by whether \
+the group is a symmetry of the task is the observed finding, not a registered \
+one; it reads as a necessary condition, which top tagging does not \
+contradict.", "Text"], Cell["fig1Figure = \
+fig1[];\nexportFigure[FileNameJoin[{outDir, \"fig1_attribution\"}], \
+fig1Figure];\nfig1Figure", "Input"]}, Open]], 
+  Cell[CellGroupData[{Cell["Figure 2: the gain against the ceiling", 
+      "Section"], Cell["How much transfers. The invariance each distilled arm \
+gains over the baseline of its regime, on canonical rows (top) and on \
+transformed rows (bottom), against the gain of the augmented ceiling on the \
+same rows of the test folds (black line, its interval at the right end). The \
+ceiling is faded where its gap on the main run's validation split lies below \
+the margin, so that the transfer fraction is undefined (LLoCa-z on canonical \
+rows, top tagging on transformed rows); the gap drawn is the one on the test \
+folds, which can differ from the main run's. The transfer fraction is the \
+fold mean of per-fold ratios, not the ratio of the drawn heights. The gains \
+are registered tests and the fraction a registered estimate; the ceiling's \
+gap on the test folds is reported only.", "Text"], 
+     Cell["fig2Figure = fig2[];\nexportFigure[FileNameJoin[{outDir, \
+\"fig2_ceiling\"}], fig2Figure];\nfig2Figure", "Input"]}, Open]], 
+  Cell[CellGroupData[{Cell["Figure 3: coverage", "Section"], 
+     Cell["Where the orbit lies. Against the coverage AUC of the cell's group \
+(0.5: g.x stays on the data's support; 1: every g.x is recognisable). Left, \
+the canonical gain over the baseline of the seven arms of each cell, a dot \
+per arm: the coverage clause of H1d, registered and partly supported, read \
+descriptively; that coverage acts as a threshold rather than an order is an \
+inference. Right, per magnitude bin, the range over the seven arms of the \
+distilled students' top-1 non-invariance (vertical) and the AUC's interval \
+(horizontal), the bins of one magnitude joined in their order: reported only. \
+Top tagging's coverage was not measured, and bins under 500 test samples are \
+not drawn.", "Text"], Cell["fig3Figure = \
+fig3[];\nexportFigure[FileNameJoin[{outDir, \"fig3_coverage\"}], \
+fig3Figure];\nfig3Figure", "Input"]}, Open]], 
+  Cell[CellGroupData[{Cell["Figure 4: transformed rows", "Section"], 
+     Cell["The non-invariant teacher's harm. On transformed rows, the \
+invariance each KD and Hint student gains over the baseline: in colour the \
+student of the cell's teacher, in black the student of the non-invariant \
+control at the same T and \[Alpha]. Where the two separate (every arm of \
+LLoCa-SO(3), LorentzNet and top tagging, three MNIST arms), they do so mainly \
+because the control's students fall below the baseline, by more than the \
+cell's students move from it; in DeepSets they do not separate, and in \
+LLoCa-z the Hint students of both teachers rise. The cell's students' gains \
+are registered tests, the control's students' gains tests that no hypothesis \
+registered; the reading as the control's harm is an inference, and the reason \
+the observed finding is stated for canonical rows alone.", "Text"], 
+     Cell["fig4Figure = fig4[];\nexportFigure[FileNameJoin[{outDir, \
+\"fig4_transformed\"}], fig4Figure];\nfig4Figure", "Input"]}, Open]], 
+  Cell[CellGroupData[{Cell["Figure 5: depth", "Section"], 
+     Cell["Where invariance arises inside the student. The orbit-invariance \
+fraction of each layer (the share of the layer's variance over the orbit that \
+is invariant) in the canonical KD and Hint students at \[Alpha] = 0 of the \
+three cells that read [pT, \[Eta], \[Phi]], under SO(2) about the beam and \
+under SO(3), with the student at initialisation dashed and the layer the hint \
+guides marked by the vertical line. The SO(2) fraction lies above the SO(3) \
+fraction at the last hidden layer and the logits in every arm (H2c, \
+registered and supported). Intervals above 1 are clipped by the frame.", 
+      "Text"], Cell["fig5Figure = fig5[];\nexportFigure[FileNameJoin[{outDir, \
+\"fig5_depth\"}], fig5Figure];\nfig5Figure", "Input"]}, Open]], 
+  Cell[CellGroupData[{Cell["Readings quoted in the text", "Section"], 
+     Cell["Figure 1: each arm's gain over the control's student on canonical \
+rows, with its interval, margin, TOST p and the test's outcome.", "Text"], 
+     Cell["fig1Readings[]", "Input"], Cell["Figure 2: each arm's gain over \
+the baseline, with its transfer fraction.", "Text"], 
+     Cell["fig2Readings[]", "Input"], Cell["Figure 2: the baseline, the \
+augmented ceiling and their gap on the test folds.", "Text"], 
+     Cell["fig2Ceilings[]", "Input"], Cell["Figure 3, left: the coverage AUC \
+of each cell and the range of its seven canonical arms.", "Text"], 
+     Cell["fig3CellReadings[]", "Input"], 
+     Cell["Figure 3, right: every bin drawn.", "Text"], 
+     Cell["fig3BinReadings[]", "Input"], Cell["Figure 4: on transformed rows, \
+the gain over the baseline of the cell's students and of the control's, and \
+the paired gain of the first over the second.", "Text"], 
+     Cell["fig4Readings[]", "Input"], Cell["Figure 5: every fraction drawn.", 
+      "Text"], Cell["fig5Readings[]", "Input"], Cell["Figure 5: SO(2) minus \
+SO(3) of the fold means at the last hidden layer and the logits.", "Text"], 
+     Cell["fig5Gaps[]", "Input"]}, Open]]}, WindowSize -> {900, 900}]
